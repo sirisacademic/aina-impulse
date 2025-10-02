@@ -1,0 +1,101 @@
+# Python
+.venv/
+venv/
+ENV/
+env/
+**__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Data files (keep structure, ignore contents)
+data/**/*
+!data/
+!data/*/
+!data/**/.gitkeep
+*.pkl
+*.pickle
+*.csv
+*.json
+*.parquet
+*.feather
+*.h5
+*.hdf5
+
+# Model files
+*.pt
+*.pth
+*.onnx
+*.bin
+*.safetensors
+models/
+
+# Logs
+logs/
+*.log
+log.txt
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Documentation
+docs/_build/
+site/
+
+# Testing
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+.hypothesis/
+
+# Temporary files
+*.tmp
+*.bak
+*.backup
+tmp/
+temp/
+
+# API keys and secrets
+*.key
+*.pem
+secrets/
+credentials/
+
+# OS files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.Spotlight-V100
+.Trashes
+
+# Project specific
+embeddings/
+cache/
+output/
+results/
+checkpoints/
+
+
