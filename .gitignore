@@ -98,4 +98,13 @@ output/
 results/
 checkpoints/
 
+.venv/
+__pycache__/
+.env
 
+*BKP*
+
+TODO.*
+
+.git-credentials
+README-*
