@@ -1,3 +1,4 @@
+from typing import Optional
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
@@ -6,6 +7,7 @@ from pathlib import Path
 import pandas as pd
 import logging
 
+from src.impulse.parser import QueryParser
 from src.impulse.settings import settings
 from src.impulse.embedding.embedder import Embedder
 from src.impulse.vector_store.factory import build_store
@@ -45,6 +47,17 @@ class SearchRequest(BaseModel):
     k: int = 5
     k_factor: int = 5
     filters: Optional[MetaFilters] = None
+    use_parsing: bool = False
+
+class ParseRequest(BaseModel):
+    query: str
+    system_prompt: Optional[str] = None
+
+class ParseResponse(BaseModel):
+    success: bool
+    parsed: Optional[Dict[str, Any]] = None
+    error: Optional[str] = None
+    raw_output: Optional[str] = None
 
 DATA_DIR = Path(settings.index_dir)
 DATA_DIR.mkdir(parents=True, exist_ok=True)
@@ -59,6 +72,13 @@ PROJECT_ORGS_PARQUET = META_DIR / "project_orgs.parquet"
 _EMBEDDER = None
 _STORE = None
 _PROJECTS_METADATA = None
+_PARSER = None
+
+def get_parser():
+    global _PARSER
+    if _PARSER is None:
+        _PARSER = QueryParser()
+    return _PARSER
 
 def load_projects_metadata():
     """Load project metadata from parquet files once at startup"""
@@ -151,25 +171,85 @@ def enrich_result_with_metadata(result: Dict[str, Any]) -> Dict[str, Any]:
     
     return result
 
+def map_parsed_filters(parsed: Dict[str, Any]) -> Optional[MetaFilters]:
+    """Convert parsed JSON filters to API filter format"""
+    filters_data = parsed.get("filters", {})
+    
+    mapped = {}
+    
+    # Programme -> framework
+    if filters_data.get("programme"):
+        mapped["framework"] = [filters_data["programme"]]
+    
+    # Year - handle various formats
+    year_val = filters_data.get("year")
+    if year_val:
+        year_str = str(year_val).strip()
+        
+        # Range: "2015-2020"
+        if '-' in year_str and not year_str.startswith(('<', '>', '=')):
+            parts = year_str.split('-')
+            try:
+                mapped["year_from"] = int(parts[0])
+                mapped["year_to"] = int(parts[1])
+            except (ValueError, IndexError):
+                pass
+        # Greater than or equal: ">=2018"
+        elif year_str.startswith('>='):
+            try:
+                mapped["year_from"] = int(year_str[2:])
+            except ValueError:
+                pass
+        # Less than or equal: "<=2018"
+        elif year_str.startswith('<='):
+            try:
+                mapped["year_to"] = int(year_str[2:])
+            except ValueError:
+                pass
+        # Greater than: ">2018"
+        elif year_str.startswith('>'):
+            try:
+                mapped["year_from"] = int(year_str[1:])
+            except ValueError:
+                pass
+        # Less than: "<2018"
+        elif year_str.startswith('<'):
+            try:
+                mapped["year_to"] = int(year_str[1:])
+            except ValueError:
+                pass
+        # Single year
+        else:
+            try:
+                year = int(year_str)
+                mapped["year_from"] = year
+                mapped["year_to"] = year
+            except ValueError:
+                pass
+    
+    return MetaFilters(**mapped) if mapped else None
+
 @app.on_event("startup")
 async def startup_event():
     """Load metadata on startup"""
     logger.info("Loading projects metadata on startup...")
     load_projects_metadata()
     logger.info("Startup complete")
-
+   
 @app.get("/health")
 def health():
     store = get_store()
     size = len(getattr(store, "id_map", []))
     exists = INDEX_PATH.exists() and META_PATH.exists()
     projects_loaded = len(_PROJECTS_METADATA) if _PROJECTS_METADATA else 0
+    parser_loaded = _PARSER is not None
     
     return {
         "status": "ok",
         "index_exists": exists,
         "index_size": size,
-        "projects_metadata_loaded": projects_loaded
+        "projects_metadata_loaded": projects_loaded,
+        "parser_loaded": parser_loaded
     }
 
 @app.post("/add_documents")
@@ -226,54 +306,97 @@ def _passes_filters(meta: Dict[str, Any], f: Optional[MetaFilters]) -> bool:
 
     return True
 
+@app.post("/parse", response_model=ParseResponse)
+def parse_query(req: ParseRequest):
+    """Parse natural language query to structured JSON"""
+    if not req.query.strip():
+        raise HTTPException(status_code=400, detail="Empty query")
+    
+    parser = get_parser()
+    result = parser.parse(req.query, req.system_prompt)
+    
+    return ParseResponse(**result)
+
 @app.post("/search")
 def search(req: SearchRequest):
     if not req.query.strip():
         raise HTTPException(status_code=400, detail="Empty query")
-
+    
+    query_text = req.query
+    filters = req.filters
+    feedback = None
+    
+    # Parse query if requested
+    if req.use_parsing:
+        parser = get_parser()
+        parse_result = parser.parse(req.query)
+        
+        if parse_result["success"]:
+            parsed = parse_result["parsed"]
+            
+            # Extract feedback for user
+            meta = parsed.get("meta", {})
+            feedback = {
+                "query_rewrite": parsed.get("query_rewrite"),
+                "notes": meta.get("notes")
+            }
+            
+            # Use semantic_query if available, fallback to original
+            query_text = parsed.get("semantic_query") or req.query
+            
+            # Map parsed filters (merge with existing)
+            parsed_filters = map_parsed_filters(parsed)
+            if parsed_filters:
+                filters = parsed_filters if not filters else filters
+        else:
+            # Parsing failed, continue with original query
+            logger.warning(f"Parsing failed: {parse_result.get('error')}")
+            feedback = {"error": "Could not parse query, using direct search"}
+    
+    # Execute search
     emb = get_embedder()
     store = get_store()
-
     total = len(getattr(store, "id_map", []))
-    # Increase k_factor to get more results before deduplication
     kk = min(req.k * max(1, req.k_factor * 2), max(1, total))
-
-    qv = emb.encode([req.query])[0]
+    qv = emb.encode([query_text])[0]
     hits = store.query(qv, k=kk)
-
-    # Enrich results with metadata from parquet files
-    enriched_hits = [enrich_result_with_metadata(h) for h in hits]
-
-    # Apply filters on the enriched metadata
-    filtered = [h for h in enriched_hits if _passes_filters(h.get("metadata", {}), req.filters)]
     
-    # De-duplicate: keep only the best scoring chunk per project
+    # Enrich results with metadata
+    enriched_hits = [enrich_result_with_metadata(h) for h in hits]
+    
+    # Apply filters
+    filtered = [h for h in enriched_hits if _passes_filters(h.get("metadata", {}), filters)]
+    
+    # De-duplicate by project
     seen_projects = {}
     deduplicated = []
     
     for hit in filtered:
-        # Extract base project ID (without chunk suffix)
         doc_id = hit.get('id', '')
         project_id = doc_id.split('#')[0] if '#' in doc_id else doc_id
         
-        # Keep only the highest scoring chunk for each project
         if project_id not in seen_projects:
             seen_projects[project_id] = hit
             deduplicated.append(hit)
         elif hit.get('score', 0) > seen_projects[project_id].get('score', 0):
-            # Replace with higher scoring chunk
             deduplicated.remove(seen_projects[project_id])
             seen_projects[project_id] = hit
             deduplicated.append(hit)
     
-    # Sort by score and take top k
+    # Sort and limit
     deduplicated.sort(key=lambda x: x.get('score', 0), reverse=True)
     results = deduplicated[:req.k]
-
-    return {
+    
+    response = {
         "query": req.query,
+        "query_used": query_text,
         "k": req.k,
         "returned": len(results),
-        "filters": req.filters.dict() if req.filters else None,
-        "results": results,
+        "filters": filters.dict() if filters else None,
+        "results": results
     }
+    
+    if feedback:
+        response["feedback"] = feedback
+    
+    return response

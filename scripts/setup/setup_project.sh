@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# Always work from project root (two levels up from this script)
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$PROJECT_ROOT"
 
 # Create venv if missing
@@ -13,12 +14,14 @@ else
 fi
 
 # Activate venv
-# shellcheck disable=SC1091
 source .venv/bin/activate
 
-# Install deps
+# Install/upgrade dependencies
 python -m pip install --upgrade pip
 pip install -r requirements.txt
+
+# Download NLTK data
+python -c "import nltk; nltk.download('punkt')"
 
 # Prepare data dirs and .env
 mkdir -p data/index
@@ -27,5 +30,4 @@ mkdir -p data/index
 echo
 echo "Setup complete. Next steps:"
 echo "  source .venv/bin/activate"
-echo "  python run_api.py"
-
+echo "  python scripts/build_indices/build_index_from_pickle.py --input data/R3C_data.pkl --index-dir data/index"
