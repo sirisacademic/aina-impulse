@@ -14,6 +14,8 @@ from src.impulse.parser import QueryParser
 from src.impulse.settings import settings
 from src.impulse.embedding.embedder import Embedder
 from src.impulse.vector_store.factory import build_store
+from src.impulse.query_expansion.loader import load_kb
+from src.impulse.query_expansion.expansion import expand_query_with_vectors
 from src.impulse.normalization import (
     normalize_framework,
     normalize_org_type,
@@ -65,6 +67,9 @@ async def global_exception_handler(request, exc):
         }
     )
 
+# Load the knowledge base for query expansion
+KB = load_kb(settings.KB_PATH)
+
 class Document(BaseModel):
     id: str = Field(..., min_length=1)
     text: str = Field(..., min_length=1)
@@ -91,6 +96,8 @@ class SearchRequest(BaseModel):
     k_factor: int = 5
     filters: Optional[MetaFilters] = None
     use_parsing: bool = False
+    query_expansion: bool = False
+    return_expansion_vectors: bool = False
 
 class ParseRequest(BaseModel):
     query: str
@@ -204,6 +211,14 @@ def get_store():
         _STORE = store
     return _STORE
 
+def pick_best_definition(definition_vectors, priority):
+    """Pick the first available definition in priority order."""
+    for lang in priority:
+        for d in definition_vectors:
+            if d["language"] == lang:
+                return d
+    return None
+
 def enrich_result_with_metadata(result: Dict[str, Any]) -> Dict[str, Any]:
     """Enrich search result with project metadata from parquet files"""
     projects_meta, participants_meta = load_metadata()
@@ -245,7 +260,7 @@ def map_parsed_filters(parsed: Dict[str, Any]) -> Optional[MetaFilters]:
     mapped = {}
     
     # Framework WITH SYNONYM EXPANSION
-    # User: "h2020" â†’ ["H2020", "HORIZON"]
+    # User: "h2020" → ["H2020", "HORIZON"]
     if filters_data.get("programme"):
         frameworks = normalize_framework(filters_data["programme"])
         if frameworks:
@@ -581,8 +596,24 @@ def search(req: SearchRequest):
             logger.warning(f"Parsing failed: {parse_result.get('error')}")
             feedback = {"error": "Could not parse query, using direct search"}
     
-    # Execute search
+    # -------- Query Expansion (Definition-based) -------------------
+    expansion_data = None
+    definition_vectors = []
+
     emb = get_embedder()
+
+    if req.query_expansion and query_text.strip():
+        expansion_data = expand_query_with_vectors(
+            query=query_text,
+            kb=KB,
+            encoder=emb,
+            languages=["en", "es", "ca"]
+        )
+        
+        # Extract vectors for search
+        definition_vectors = expansion_data["definition_vectors"]
+
+    # Execute search
     store = get_store()
     total = len(getattr(store, "id_map", []))
     
@@ -590,14 +621,37 @@ def search(req: SearchRequest):
     if not query_text.strip():
         # Filter-only search: use configurable max to avoid HNSW index limits
         kk = min(settings.max_filter_only_retrieve, total)
-        qv = np.zeros(emb.get_dim())
+        qv_base = np.zeros(emb.get_dim())
         logger.info(f"Filter-only search: retrieving {kk}/{total} documents for filtering")
     else:
         # Normal semantic search
         kk = min(req.k * max(1, req.k_factor * 2), total)
-        qv = emb.encode([query_text])[0]
+        qv_base = emb.encode([query_text])[0]
     
-    hits = store.query(qv, k=kk)
+    # First search: base query
+    hits_base = store.query(qv_base, k=kk)
+
+    # --- Definition-expanded searches ---
+    hits_expanded = []
+
+    if definition_vectors:
+        # Select ONLY the best definition using priority
+        PRIORITY = ["en", "es", "ca"]
+        best_def = pick_best_definition(definition_vectors, PRIORITY)
+
+        if best_def:
+            vec = best_def["vector"]
+            h = store.query(vec, k=kk)
+
+            # Annotate for explainability
+            for item in h:
+                item["expansion_language"] = best_def["language"]
+                item["expansion_definition"] = best_def["definition"]
+
+            hits_expanded.extend(h)
+    
+    # Combine: base + expanded
+    hits = hits_base + hits_expanded
     
     # Enrich with metadata
     enriched_hits = [enrich_result_with_metadata(h) for h in hits]
@@ -637,7 +691,7 @@ def search(req: SearchRequest):
         "query_used": query_text,
         "k": req.k,
         "returned": len(results),
-        "total_matching": total_matching,  # Total results matching filters
+        "total_matching": total_matching,
         "filters": filters.dict() if filters else None,
         "results": results
     }
@@ -663,6 +717,13 @@ def search(req: SearchRequest):
     
     if feedback:
         response["feedback"] = feedback
+
+    # Add expansion data if requested
+    if req.return_expansion_vectors and expansion_data:
+        response["expansion"] = {
+            "query_vector": expansion_data["query_vector"],
+            "definition_vectors": expansion_data["definition_vectors"],
+            "aliases": expansion_data["aliases"]
+        }
     
     return response
-

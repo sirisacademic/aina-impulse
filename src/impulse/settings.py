@@ -23,8 +23,11 @@ class Settings(BaseSettings):
     query_parser_prompt: str = "data/training/salamandra_finetuning_prompt.txt"
     
     # Search limits for filter-only queries
-    max_filter_only_retrieve: int = 1000  # ← NEW: Max docs to retrieve for filter-only search
-    max_results_warning_threshold: int = 500  # ← NEW: Warn user if more results available
+    max_filter_only_retrieve: int = 1000  # ← Max docs to retrieve for filter-only search
+    max_results_warning_threshold: int = 500  # ← Warn user if more results available
+    
+    # KB for query expansion
+    KB_PATH: str = "data/kb/wikidata_kb.jsonl"
     
     # NOTE: This is Pydantic's model_config: https://docs.pydantic.dev/2.0/usage/model_config/
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
