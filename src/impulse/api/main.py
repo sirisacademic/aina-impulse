@@ -11,6 +11,8 @@ from src.impulse.parser import QueryParser
 from src.impulse.settings import settings
 from src.impulse.embedding.embedder import Embedder
 from src.impulse.vector_store.factory import build_store
+from src.impulse.query_expansion.loader import load_kb
+from src.impulse.query_expansion.expansion import expand_query_with_vectors
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -26,6 +28,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Load the knowledge base for query expansion
+KB = load_kb(settings.KB_PATH)
 
 class Document(BaseModel):
     id: str = Field(..., min_length=1)
@@ -48,6 +53,8 @@ class SearchRequest(BaseModel):
     k_factor: int = 5
     filters: Optional[MetaFilters] = None
     use_parsing: bool = False
+    query_expansion: bool = False
+    return_expansion_vectors: bool = False
 
 class ParseRequest(BaseModel):
     query: str
@@ -145,6 +152,14 @@ def get_store():
             store.init(dim=emb.get_dim())
         _STORE = store
     return _STORE
+
+def pick_best_definition(definition_vectors, priority):
+    """Pick the first available definition in priority order."""
+    for lang in priority:
+        for d in definition_vectors:
+            if d["language"] == lang:
+                return d
+    return None
 
 def enrich_result_with_metadata(result: Dict[str, Any]) -> Dict[str, Any]:
     """Enrich a search result with project metadata from parquet files"""
@@ -353,13 +368,54 @@ def search(req: SearchRequest):
             logger.warning(f"Parsing failed: {parse_result.get('error')}")
             feedback = {"error": "Could not parse query, using direct search"}
     
+    # -------- Query Expansion (Definition-based) -------------------
+    expansion_data = None
+    definition_vectors = []   # list of (vector, language, definition)
+
     # Execute search
     emb = get_embedder()
+
+    if req.query_expansion:
+        
+        expansion_data = expand_query_with_vectors(
+            query=req.query,
+            kb=KB,
+            encoder=emb,   # dense embedder
+            languages=["en", "es", "ca"] # "it"
+        )
+        
+        # Extract vectors for search
+        definition_vectors = expansion_data["definition_vectors"]
+
     store = get_store()
     total = len(getattr(store, "id_map", []))
     kk = min(req.k * max(1, req.k_factor * 2), max(1, total))
-    qv = emb.encode([query_text])[0]
-    hits = store.query(qv, k=kk)
+    # --- Base query embedding ---
+    qv_base = emb.encode([query_text])[0]
+    # First search: base query
+    hits_base = store.query(qv_base, k=kk)
+
+    # --- Definition-expanded searches ---
+    hits_expanded = []
+
+    # Select ONLY the best definition using priority
+    PRIORITY = ["en", "es", "ca"]
+    best_def = pick_best_definition(definition_vectors, PRIORITY)
+
+    hits_expanded = []
+
+    if best_def:
+        vec = best_def["vector"]
+        h = store.query(vec, k=kk)
+
+        # annotate for explainability
+        for item in h:
+            item["expansion_language"] = best_def["language"]
+            item["expansion_definition"] = best_def["definition"]
+
+        hits_expanded.extend(h)
+    # Combine: base + expanded
+    hits = hits_base + hits_expanded
     
     # Enrich results with metadata
     enriched_hits = [enrich_result_with_metadata(h) for h in hits]
@@ -398,5 +454,12 @@ def search(req: SearchRequest):
     
     if feedback:
         response["feedback"] = feedback
+
+    if req.return_expansion_vectors and expansion_data:
+        response["expansion"] = {
+            "query_vector": expansion_data["query_vector"],
+            "definition_vectors": expansion_data["definition_vectors"],
+            "aliases": expansion_data["aliases"]
+        }
     
     return response

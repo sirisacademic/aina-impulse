@@ -17,7 +17,8 @@ class Settings(BaseSettings):
     require_index: bool = False
     auto_build_from_pickle: str = ""
     auto_build_limit: int = 0
-    
+
+
     # Query parser settings
     query_parser_model: str = "models/impulse-7b-tools-v3-merged"
     query_parser_quantize: Optional[str] = None
@@ -25,6 +26,9 @@ class Settings(BaseSettings):
     
     # NOTE: This is Pydantic's model_config: https://docs.pydantic.dev/2.0/usage/model_config/
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+
+    # KB for query expansion
+    KB_PATH: str = "data/kb/wikidata_kb.jsonl"
 
 settings = Settings()
 
