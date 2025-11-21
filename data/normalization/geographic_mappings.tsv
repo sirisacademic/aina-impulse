@@ -1,0 +1,16 @@
+# Geographic Location Mappings
+# Format: user_input	canonical_form	location_type	language
+
+user_input	canonical_form	location_type	language
+# Regions
+catalunya	catalunya	region	ca
+cataluña	catalunya	region	es
+catalonia	catalunya	region	en
+
+# Provinces
+barcelona	barcelona	province	ca
+girona	girona	province	ca
+gerona	girona	province	es
+lleida	lleida	province	ca
+lerida	lleida	province	es
+tarragona	tarragona	province	ca

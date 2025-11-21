@@ -1,0 +1,194 @@
+# Organization Type Mappings
+# Format: user_input	db_value	description	language
+
+user_input	db_value	description	language
+# === LLM Parser Output → Database Values ===
+
+# "company" → EMPRESA or PRC (synonyms)
+company	EMPRESA	Private company	en
+company	PRC	Private company (CORDIS)	en
+company	Company	Private company	en
+empresa	EMPRESA	Private company	es
+empresa	PRC	Private company (CORDIS)	es
+empresa	Company	Private company	es
+private company	EMPRESA	Private company	en
+private company	PRC	Private company (CORDIS)	en
+private company	Company	Private company	en
+
+# "university" → HES or Higher Education Institution
+university	HES	Higher education	en
+university	Higher Education Institution	Higher education	en
+universidad	HES	Higher education	es
+universidad	Higher Education Institution	Higher education	es
+universitat	HES	Higher education	ca
+universitat	Higher Education Institution	Higher education	ca
+higher education	HES	Higher education	en
+higher education	Higher Education Institution	Higher education	en
+educacion superior	HES	Higher education	es
+educación superior	HES	Higher education	es
+
+# "research_center" → REC or Research Organisation
+research_center	REC	Research organization	en
+research_center	Research Organisation	Research organization	en
+research center	REC	Research organization	en
+research center	Research Organisation	Research organization	en
+research centre	REC	Research organization	en
+research centre	Research Organisation	Research organization	en
+centro de investigacion	REC	Research organization	es
+centro de investigacion	Research Organisation	Research organization	es
+centro de investigación	REC	Research organization	es
+centro de investigación	Research Organisation	Research organization	es
+centre de recerca	REC	Research organization	ca
+centre de recerca	Research Organisation	Research organization	ca
+research organization	REC	Research organization	en
+research organization	Research Organisation	Research organization	en
+research organisation	REC	Research organization	en
+research organisation	Research Organisation	Research organization	en
+
+# "public_entity" → PUB or Public Body
+public_entity	PUB	Public body	en
+public_entity	Public Body	Public body	en
+public entity	PUB	Public body	en
+public entity	Public Body	Public body	en
+public body	PUB	Public body	en
+public body	Public Body	Public body	en
+public	PUB	Public body	en
+public	Public Body	Public body	en
+publico	PUB	Public body	es
+publico	Public Body	Public body	es
+público	PUB	Public body	es
+público	Public Body	Public body	es
+públic	PUB	Public body	ca
+públic	Public Body	Public body	ca
+entidad publica	PUB	Public body	es
+entidad publica	Public Body	Public body	es
+entidad pública	PUB	Public body	es
+entidad pública	Public Body	Public body	es
+entitat pública	PUB	Public body	ca
+entitat pública	Public Body	Public body	ca
+government	PUB	Public body	en
+government	Public Body	Public body	en
+
+# "hospital" → OTH (or HES if university hospital)
+hospital	OTH	Hospital / Other	en
+hospital	Other	Hospital / Other	en
+hospital	HES	University hospital	en
+hospital	Higher Education Institution	University hospital	en
+
+# "ngo" → OTH or Other
+ngo	OTH	NGO / Other	en
+ngo	Other	NGO / Other	en
+non-governmental organization	OTH	NGO / Other	en
+non-governmental organization	Other	NGO / Other	en
+ong	OTH	NGO / Other	es
+ong	Other	NGO / Other	es
+
+# === Database Values (as-is) ===
+
+# CORDIS standard types
+rec	REC	Research organization	en
+rec	Research Organisation	Research organization	en
+prc	PRC	Private company	en
+prc	Company	Private company	en
+hes	HES	Higher education	en
+hes	Higher Education Institution	Higher education	en
+pub	PUB	Public body	en
+pub	Public Body	Public body	en
+oth	OTH	Other	en
+oth	Other	Other	en
+
+# Spanish database variants
+centro tecnologico	CENTRO TECNOLOGICO	Technology center	es
+centro tecnológico	CENTRO TECNOLOGICO	Technology center	es
+technology center	CENTRO TECNOLOGICO	Technology center	en
+technology centre	CENTRO TECNOLOGICO	Technology center	en
+centre tecnològic	CENTRO TECNOLOGICO	Technology center	ca
+
+asociacion de investigacion	ASOCIACION DE INVESTIGACION	Research association	es
+asociación de investigación	ASOCIACION DE INVESTIGACION	Research association	es
+research association	ASOCIACION DE INVESTIGACION	Research association	en
+associació de recerca	ASOCIACION DE INVESTIGACION	Research association	ca
+
+consorcio	CONSORCIO	Consortium	es
+consortium	CONSORCIO	Consortium	en
+consorci	CONSORCIO	Consortium	ca
+
+asociacion	ASOCIACION	Association	es
+asociación	ASOCIACION	Association	es
+association	ASOCIACION	Association	en
+associació	ASOCIACION	Association	ca
+
+# === English Synonyms ===
+enterprise	EMPRESA	Private company	en
+enterprise	PRC	Private company (CORDIS)	en
+enterprise	Company	Private company	en
+business	EMPRESA	Private company	en
+business	PRC	Private company (CORDIS)	en
+business	Company	Private company	en
+firm	EMPRESA	Private company	en
+firm	PRC	Private company (CORDIS)	en
+firm	Company	Private company	en
+sme	EMPRESA	SME / Private company	en
+sme	PRC	SME / Private company (CORDIS)	en
+sme	Company	SME / Private company	en
+large company	EMPRESA	Large company	en
+large company	PRC	Large company (CORDIS)	en
+large company	Company	Large company	en
+
+college	HES	Higher education	en
+college	Higher Education Institution	Higher education	en
+educational institution	HES	Higher education	en
+educational institution	Higher Education Institution	Higher education	en
+
+other	OTH	Other	en
+other	Other	Other	en
+
+# === Spanish Synonyms ===
+compañia	EMPRESA	Private company	es
+compañia	PRC	Private company (CORDIS)	es
+compañia	Company	Private company	es
+compañía	EMPRESA	Private company	es
+compañía	PRC	Private company (CORDIS)	es
+compañía	Company	Private company	es
+negocio	EMPRESA	Private company	es
+negocio	PRC	Private company (CORDIS)	es
+negocio	Company	Private company	es
+pyme	EMPRESA	PYME / Private company	es
+pyme	PRC	PYME / Private company (CORDIS)	es
+pyme	Company	PYME / Private company	es
+gran empresa	EMPRESA	Large company	es
+gran empresa	PRC	Large company (CORDIS)	es
+gran empresa	Company	Large company	es
+
+institucion educativa	HES	Higher education	es
+institucion educativa	Higher Education Institution	Higher education	es
+institución educativa	HES	Higher education	es
+institución educativa	Higher Education Institution	Higher education	es
+
+organismo publico	PUB	Public body	es
+organismo publico	Public Body	Public body	es
+organismo público	PUB	Public body	es
+organismo público	Public Body	Public body	es
+
+otro	OTH	Other	es
+otro	Other	Other	es
+
+# === Catalan Synonyms ===
+companyia	EMPRESA	Private company	ca
+companyia	PRC	Private company (CORDIS)	ca
+companyia	Company	Private company	ca
+negoci	EMPRESA	Private company	ca
+negoci	PRC	Private company (CORDIS)	ca
+negoci	Company	Private company	ca
+pime	EMPRESA	PIME / Private company	ca
+pime	PRC	PIME / Private company (CORDIS)	ca
+pime	Company	PIME / Private company	ca
+
+institució educativa	HES	Higher education	ca
+institució educativa	Higher Education Institution	Higher education	ca
+
+organisme públic	PUB	Public body	ca
+organisme públic	Public Body	Public body	ca
+
+altre	OTH	Other	ca
+altre	Other	Other	ca

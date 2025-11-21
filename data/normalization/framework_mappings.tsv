@@ -1,0 +1,29 @@
+# Framework/Programme Mappings
+# Format: user_input	db_value	short_form	category
+
+user_input	db_value	short_form	category
+# H2020/HORIZON synonyms - cross-mapped
+h2020	H2020	H2020	EU
+h2020	HORIZON	HORIZON	EU
+horizon	HORIZON	HORIZON	EU
+horizon	H2020	H2020	EU
+horizon 2020	H2020	H2020	EU
+horizon 2020	HORIZON	HORIZON	EU
+horizon europe	HORIZON	HORIZON	EU
+horizon europe	H2020	H2020	EU
+horizon-europe	HORIZON	HORIZON	EU
+horizon-europe	H2020	H2020	EU
+
+# AEI variants
+aei	Agencia Estatal de Investigación (AEI)	AEI	National
+agencia estatal de investigacion	Agencia Estatal de Investigación (AEI)	AEI	National
+agencia estatal de investigación	Agencia Estatal de Investigación (AEI)	AEI	National
+
+# CDTI variants
+cdti	Centro para el Desarrollo Tecnológico y la Innovación (CDTI)	CDTI	National
+centro para el desarrollo tecnologico	Centro para el Desarrollo Tecnológico y la Innovación (CDTI)	CDTI	National
+centro para el desarrollo tecnológico	Centro para el Desarrollo Tecnológico y la Innovación (CDTI)	CDTI	National
+
+# RIS3CAT
+ris3cat	Instruments RIS3CAT	RIS3CAT	Regional
+instruments ris3cat	Instruments RIS3CAT	RIS3CAT	Regional

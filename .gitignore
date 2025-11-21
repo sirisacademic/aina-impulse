@@ -20,11 +20,13 @@ build/
 .env.local
 .env.*.local
 
-# Data files (keep structure, ignore contents)
+# Data files (keep structure, ignore contents - except for the 'normalization' directory)
 data/**/*
 !data/
 !data/*/
 !data/**/.gitkeep
+!data/normalization/*
+
 *.pkl
 *.pickle
 *.csv
