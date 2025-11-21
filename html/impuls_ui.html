@@ -90,8 +90,8 @@
         }
         
         button {
-            padding: 15px 30px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 8px 15px;
+            background: darkslateblue;
             color: white;
             border: none;
             border-radius: 10px;
@@ -218,107 +218,26 @@
             margin-bottom: 10px;
         }
         
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 20px;
+        .filters-toggle {
         }
         
-        .stat-card {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 10px;
-            text-align: center;
-        }
-        
-        .stat-value {
-            font-size: 32px;
-            font-weight: bold;
-            color: #667eea;
-            margin-bottom: 5px;
-        }
-        
-        .stat-label {
-            color: #666;
-            font-size: 14px;
-        }
-        
-        .debug-section {
-            margin-top: 20px;
-            border-top: 2px solid #e0e0e0;
-            padding-top: 20px;
-        }
-        
-        .debug-toggle {
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            padding: 10px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-weight: 600;
-            color: #495057;
-        }
-        
-        .debug-toggle:hover {
-            background: #e9ecef;
-        }
-        
-        .debug-content {
-            margin-top: 15px;
+        .filters-content {
             display: none;
-        }
-        
-        .debug-content.show {
-            display: block;
-        }
-        
-        .debug-box {
-            background: #1e1e1e;
-            color: #d4d4d4;
-            padding: 15px;
-            border-radius: 8px;
-            overflow-x: auto;
-            margin-bottom: 15px;
-        }
-        
-        .debug-box h4 {
-            color: #4fc3f7;
-            margin-bottom: 10px;
-            font-size: 14px;
-        }
-        
-        .debug-box pre {
-            margin: 0;
-            font-family: 'Courier New', monospace;
-            font-size: 12px;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-        }
-        
-        select {
-            padding: 8px 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            background: white;
-            cursor: pointer;
-        }
-        
-        .filters-section {
-            background: #f8f9fa;
+            margin-top: 20px;
             padding: 20px;
+            background: #f8f9fa;
             border-radius: 10px;
-            margin-bottom: 20px;
+        }
+        
+        .filters-content.show {
+            display: block;
         }
         
         .filters-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 15px;
-            margin-top: 10px;
+            margin-bottom: 15px;
         }
         
         .filter-group {
@@ -328,74 +247,34 @@
         }
         
         .filter-group label {
-            font-size: 12px;
-            color: #666;
+            font-size: 13px;
             font-weight: 600;
+            color: #555;
         }
         
-        .feedback-section {
-            background: #e3f2fd;
-            padding: 15px 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            border-left: 4px solid #2196f3;
-        }
-        
-        .feedback-section h4 {
-            color: #1565c0;
-            margin-bottom: 10px;
+        .filter-group input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
             font-size: 14px;
-        }
-        
-        .feedback-item {
-            margin-bottom: 8px;
-            font-size: 14px;
-        }
-        
-        .feedback-label {
-            font-weight: 600;
-            color: #1976d2;
-        }
-        
-        .feedback-value {
-            color: #424242;
-        }
-        
-        .detected-filters {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 5px;
-        }
-        
-        .filter-tag {
-            background: #fff;
-            padding: 4px 12px;
-            border-radius: 15px;
-            font-size: 12px;
-            border: 1px solid #2196f3;
-            color: #1976d2;
         }
         
         .results {
-            background: white;
-            border-radius: 15px;
-            padding: 30px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-top: 30px;
         }
         
         .result-item {
+            background: white;
+            border-radius: 10px;
             padding: 20px;
-            border-bottom: 1px solid #e0e0e0;
-            transition: background 0.3s;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            transition: transform 0.2s;
         }
         
         .result-item:hover {
-            background: #f8f9fa;
-        }
-        
-        .result-item:last-child {
-            border-bottom: none;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
         
         .result-header {
@@ -406,54 +285,58 @@
         }
         
         .result-title {
-            color: #333;
             font-size: 18px;
             font-weight: 600;
+            color: #333;
             margin-bottom: 5px;
         }
         
         .result-score {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #667eea;
             color: white;
-            padding: 5px 10px;
+            padding: 5px 12px;
             border-radius: 20px;
-            font-size: 12px;
+            font-size: 13px;
             font-weight: 600;
+            white-space: nowrap;
         }
         
         .result-abstract {
-            color: #666;
+            color: #555;
             line-height: 1.6;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
         }
         
         .result-meta {
             display: flex;
-            gap: 20px;
-            font-size: 14px;
-            color: #999;
             flex-wrap: wrap;
+            gap: 10px;
+            font-size: 13px;
         }
         
         .meta-item {
-            display: flex;
-            align-items: center;
-            gap: 5px;
+            padding: 5px 12px;
+            background: #f0f0f0;
+            border-radius: 6px;
+            color: #555;
         }
         
         .meta-label {
             font-weight: 600;
+            color: #333;
         }
         
         .loading {
             text-align: center;
             padding: 40px;
-            color: #999;
+            color: #666;
+            font-size: 18px;
         }
         
         .error {
             background: #fee;
-            color: #c00;
+            border: 1px solid #fcc;
+            color: #c33;
             padding: 15px;
             border-radius: 10px;
             margin: 20px 0;
@@ -461,10 +344,132 @@
         
         .info {
             background: #e3f2fd;
-            color: #1565c0;
+            border: 1px solid #90caf9;
+            color: #1976d2;
             padding: 15px;
             border-radius: 10px;
             margin: 20px 0;
+        }
+        
+        .feedback-section {
+            background: #f0f7ff;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .feedback-section h4 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+        
+        .feedback-item {
+            margin-bottom: 10px;
+        }
+        
+        .feedback-label {
+            font-weight: 600;
+            color: #555;
+        }
+        
+        .feedback-value {
+            color: #333;
+        }
+        
+        .detected-filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        
+        .filter-tag {
+            background: #667eea;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .debug-section {
+            margin-top: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .debug-header {
+            background: #343a40;
+            color: white;
+            padding: 12px 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .debug-icon {
+            font-size: 12px;
+        }
+        
+        .debug-content {
+            display: none;
+            padding: 20px;
+        }
+        
+        .debug-content.show {
+            display: block;
+        }
+        
+        .debug-box {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            overflow-x: auto;
+        }
+        
+        .debug-box h4 {
+            color: #f8f8f2;
+            margin-bottom: 10px;
+        }
+        
+        .debug-box pre {
+            margin: 0;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .stat-value {
+            font-size: 36px;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 14px;
         }
     </style>
 </head>
@@ -475,196 +480,201 @@
             <h2 style="color: #667eea; font-size: 20px; margin-bottom: 10px;">Sistema de Cerca Semàntica</h2>
             <p class="subtitle">
                 Projecte AINA Challenge 2024 - Cerca multilingüe per RIS3MCAT
-                <span id="api-status" class="status-badge offline">Offline</span>
+                <span id="status-badge" class="status-badge offline">Offline</span>
             </p>
         </header>
-        
+
         <div class="search-section">
             <div class="tabs">
                 <button class="tab active" onclick="switchTab('search')">Cerca Semàntica</button>
                 <button class="tab coming-soon" onclick="switchTab('entities')">Extracció d'Entitats</button>
-                <button class="tab coming-soon" onclick="switchTab('expand')">Expansió de Query</button>
+                <button class="tab coming-soon" onclick="switchTab('expansion')">Expansió de Query</button>
                 <button class="tab coming-soon" onclick="switchTab('graph')">Graf de Coneixement</button>
-                <button class="tab" onclick="switchTab('stats')">Estadístiques</button>
+                <button class="tab" onclick="switchTab('stats')">Informació del Sistema</button>
             </div>
-            
-            <!-- SEARCH TAB -->
+
             <div id="search-tab" class="tab-content active">
-            <div class="search-box">
-                <input type="text" id="search-input" 
-                       placeholder="Cerca projectes... (ex: projectes d'IA en salut finançats per H2020)">
-                <button onclick="performSearch()">Cercar</button>
+                <div class="search-box">
+                    <input type="text" id="search-input" 
+                           placeholder="Cerca projectes... (ex: projectes d'IA en salut finançats per H2020)">
+                    <button onclick="performSearch()">Cercar</button>
+                </div>
+
+                <div class="options">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="use-parsing" checked>
+                        <label for="use-parsing">🤖 Parsing Intel·ligent</label>
+                    </div>
+                    <div class="option-group">
+                        <label>Resultats (k):</label>
+                        <select id="top-k">
+                            <option value="3">3</option>
+                            <option value="5" selected>5</option>
+                            <option value="10">10</option>
+                            <option value="20">20</option>
+                        </select>
+                    </div>
+                    <div class="option-group">
+                        <label>Factor de cerca (k_factor):</label>
+                        <select id="k-factor">
+                            <option value="1">1</option>
+                            <option value="3">3</option>
+                            <option value="5" selected>5</option>
+                            <option value="10">10</option>
+                        </select>
+                    </div>
+                    <div class="filters-toggle">
+                        <button onclick="toggleFilters()" style="background: darkslateblue;">⚙️ Filtres</button>
+                    </div>
+                </div>
+
+                <div id="filters" class="filters-content">
+                    <h3 style="margin-bottom: 15px;">Filtres de Metadades</h3>
+                    <div class="filters-grid">
+                        <div class="filter-group">
+                            <label>Framework:</label>
+                            <input type="text" id="filter-framework" placeholder="ex: H2020, HORIZON, FEDER">
+                        </div>
+                        <div class="filter-group">
+                            <label>Instrument:</label>
+                            <input type="text" id="filter-instrument" placeholder="ex: RIA, IA, CSA">
+                        </div>
+                        <div class="filter-group">
+                            <label>País:</label>
+                            <input type="text" id="filter-country" placeholder="ex: Spain, France">
+                        </div>
+                        <div class="filter-group">
+                            <label>Regió:</label>
+                            <input type="text" id="filter-region" placeholder="ex: Catalunya, Madrid">
+                        </div>
+                        <div class="filter-group">
+                            <label>Província:</label>
+                            <input type="text" id="filter-province" placeholder="ex: Barcelona, Girona">
+                        </div>
+                        <div class="filter-group">
+                            <label>Tipus d'Entitat:</label>
+                            <input type="text" id="filter-org-type" placeholder="ex: HES, EMPRESA, REC">
+                        </div>
+                        <div class="filter-group">
+                            <label>Any des de:</label>
+                            <input type="number" id="filter-year-from" placeholder="2015" min="2000" max="2030">
+                        </div>
+                        <div class="filter-group">
+                            <label>Any fins a:</label>
+                            <input type="number" id="filter-year-to" placeholder="2024" min="2000" max="2030">
+                        </div>
+                    </div>
+                </div>
+
+                <div id="feedback-section" style="display: none;"></div>
+
+                <div id="results" class="results"></div>
+
+                <div id="debug-section" class="debug-section" style="display: none;">
+                    <div class="debug-header" onclick="toggleDebug()">
+                        <span class="debug-icon">▶</span>
+                        <span>🔍 API Request & Response (Debug)</span>
+                    </div>
+                    <div id="debug-content" class="debug-content"></div>
+                </div>
             </div>
-            
-            <div class="options">
-                <div class="checkbox-group">
-                    <input type="checkbox" id="use-parsing" checked>
-                    <label for="use-parsing">🤖 Parsing Intel·ligent</label>
-                </div>
-                
-                <div class="option-group">
-                    <label>Resultats (k):</label>
-                    <select id="top-k">
-                        <option value="5" selected>5</option>
-                        <option value="10">10</option>
-                        <option value="20">20</option>
-                        <option value="50">50</option>
-                    </select>
-                </div>
-                <div class="option-group">
-                    <label>Factor de cerca (k_factor):</label>
-                    <select id="k-factor">
-                        <option value="3">3</option>
-                        <option value="5" selected>5</option>
-                        <option value="10">10</option>
-                    </select>
-                </div>
-                <div class="option-group">
-                    <button onclick="toggleFilters()">⚙️ Filtres</button>
-                </div>
-            </div>
-            
-            <div id="filters" class="filters-section" style="display: none;">
-                <h3>Filtres de Metadades</h3>
-                <div class="filters-grid">
-                    <div class="filter-group">
-                        <label>Framework:</label>
-                        <input type="text" id="filter-framework" placeholder="ex: H2020, FEDER">
-                    </div>
-                    <div class="filter-group">
-                        <label>RIS3CAT Àmbit:</label>
-                        <input type="text" id="filter-ambit" placeholder="ex: Salut, Energia">
-                    </div>
-                    <div class="filter-group">
-                        <label>RIS3CAT TFT:</label>
-                        <input type="text" id="filter-tft" placeholder="ex: TIC, Bio">
-                    </div>
-                    <div class="filter-group">
-                        <label>Any des de:</label>
-                        <input type="number" id="filter-year-from" placeholder="2020" min="2000" max="2030">
-                    </div>
-                    <div class="filter-group">
-                        <label>Any fins a:</label>
-                        <input type="number" id="filter-year-to" placeholder="2024" min="2000" max="2030">
-                    </div>
-                </div>
-            </div>
-            
-            <div id="feedback-section" style="display: none;"></div>
-            </div>
-            
-            <!-- ENTITIES TAB -->
+
             <div id="entities-tab" class="tab-content">
                 <div class="coming-soon-message">
                     <h3>🚧 Extracció d'Entitats (NER)</h3>
                     <p>Aquesta funcionalitat serà implementada en WP2</p>
-                    <p style="margin-top: 10px; font-size: 14px;">
+                    <p style="margin-top: 10px;">
                         Permetrà extreure automàticament entitats (organitzacions, llocs, persones) 
-                        dels textos utilitzant el model DEBERTA_CIEL d'AINA.
+                        dels projectes utilitzant el model DEBERTA_CIEL d'AINA.
                     </p>
                 </div>
             </div>
-            
-            <!-- EXPAND TAB -->
-            <div id="expand-tab" class="tab-content">
+
+            <div id="expansion-tab" class="tab-content">
                 <div class="coming-soon-message">
                     <h3>🚧 Expansió Semàntica de Queries</h3>
                     <p>Aquesta funcionalitat serà implementada en WP2</p>
-                    <p style="margin-top: 10px; font-size: 14px;">
-                        Expandirà les consultes amb termes relacionats utilitzant WordNet 
-                        i co-ocurrències del corpus per millorar els resultats de cerca.
+                    <p style="margin-top: 10px;">
+                        Expandirà les cerques amb sinònims i conceptes relacionats utilitzant 
+                        WordNet i altres recursos lingüístics catalans.
                     </p>
                 </div>
             </div>
-            
-            <!-- GRAPH TAB -->
+
             <div id="graph-tab" class="tab-content">
                 <div class="coming-soon-message">
                     <h3>🚧 Graf de Coneixement</h3>
-                    <p>Aquesta funcionalitat serà implementada en WP2-WP3</p>
-                    <p style="margin-top: 10px; font-size: 14px;">
-                        Visualitzarà les relacions entre projectes, entitats i conceptes
-                        en un graf interactiu navegable.
+                    <p>Aquesta funcionalitat serà implementada en WP3</p>
+                    <p style="margin-top: 10px;">
+                        Visualització interactiva de les relacions entre projectes, 
+                        organitzacions i temàtiques.
                     </p>
                 </div>
             </div>
             
-            <!-- STATS TAB -->
             <div id="stats-tab" class="tab-content">
-                <button onclick="loadStats()">Carregar Estadístiques</button>
+                <div id="stats-results">
+                    <div class="info">Fes clic al botó "Informació del Sistema" per carregar les dades del sistema.</div>
+                </div>
             </div>
-        </div>
-        
-        <div id="results" class="results">
-            <div class="loading">
-                Esperant cerca... Introdueix un terme per començar.
-            </div>
-        </div>
-        
-        <div id="debug-section" class="results debug-section" style="display: none;">
-            <div class="debug-toggle" onclick="toggleDebug()">
-                <span id="debug-icon">▶</span>
-                <span>🔍 API Request & Response (Debug)</span>
-            </div>
-            <div id="debug-content" class="debug-content"></div>
+            
         </div>
     </div>
-    
+
     <script>
         const API_URL = 'http://65.21.33.94:8000';
         
-        window.addEventListener('load', async () => {
-            checkAPIStatus();
-            setInterval(checkAPIStatus, 5000);
-        });
-        
-        function switchTab(tabName) {
-            document.querySelectorAll('.tab-content').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            document.getElementById(`${tabName}-tab`).classList.add('active');
-            document.querySelectorAll('.tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            event.target.classList.add('active');
-        }
-        
-        async function checkAPIStatus() {
+        async function checkHealth() {
             try {
                 const response = await fetch(`${API_URL}/health`);
                 const data = await response.json();
+                const badge = document.getElementById('status-badge');
                 
-                const statusBadge = document.getElementById('api-status');
                 if (data.status === 'ok') {
-                    let statusText = `Online (${data.index_size} docs`;
-                    if (data.projects_metadata_loaded) {
-                        statusText += `, ${data.projects_metadata_loaded} projects`;
+                    badge.className = 'status-badge online';
+                    let statusText = 'Online';
+                    if (data.index_size > 0) {
+                        statusText += `, ${data.index_size} docs`;
                     }
                     if (data.parser_loaded) {
                         statusText += ', 🤖 Parser';
                     }
-                    statusText += ')';
-                    statusBadge.textContent = statusText;
-                    statusBadge.className = 'status-badge online';
+                    badge.textContent = statusText;
                 } else {
-                    statusBadge.textContent = 'Offline';
-                    statusBadge.className = 'status-badge offline';
+                    badge.className = 'status-badge offline';
+                    badge.textContent = 'Offline';
                 }
             } catch (error) {
-                const statusBadge = document.getElementById('api-status');
-                statusBadge.textContent = 'Offline';
-                statusBadge.className = 'status-badge offline';
+                const badge = document.getElementById('status-badge');
+                badge.className = 'status-badge offline';
+                badge.textContent = 'Offline';
+            }
+        }
+        
+        checkHealth();
+        setInterval(checkHealth, 30000);
+        
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+            
+            // Auto-load stats when switching to stats tab
+            if (tabName === 'stats') {
+                loadStats();
             }
         }
         
         function toggleFilters() {
             const filters = document.getElementById('filters');
-            filters.style.display = filters.style.display === 'none' ? 'block' : 'none';
+            filters.classList.toggle('show');
         }
         
         function toggleDebug() {
             const content = document.getElementById('debug-content');
-            const icon = document.getElementById('debug-icon');
+            const icon = document.querySelector('.debug-icon');
             
             if (content.classList.contains('show')) {
                 content.classList.remove('show');
@@ -695,20 +705,37 @@
         }
         
         function applyParsedFilters(filters) {
-            // Limpiar todos los filtros primero
+            // Clear all filters first
             document.getElementById('filter-framework').value = '';
-            document.getElementById('filter-ambit').value = '';
-            document.getElementById('filter-tft').value = '';
+            document.getElementById('filter-instrument').value = '';
+            document.getElementById('filter-country').value = '';
+            document.getElementById('filter-region').value = '';
+            document.getElementById('filter-province').value = '';
+            document.getElementById('filter-org-type').value = '';
             document.getElementById('filter-year-from').value = '';
             document.getElementById('filter-year-to').value = '';
             
             if (!filters) return;
             
-            // Aplicar los nuevos filtros
+            // Apply new filters
             if (filters.framework && filters.framework.length > 0) {
                 document.getElementById('filter-framework').value = filters.framework.join(', ');
             }
-            
+            if (filters.instrument) {
+                document.getElementById('filter-instrument').value = filters.instrument;
+            }
+            if (filters.country && filters.country.length > 0) {
+                document.getElementById('filter-country').value = filters.country.join(', ');
+            }
+            if (filters.region && filters.region.length > 0) {
+                document.getElementById('filter-region').value = filters.region.join(', ');
+            }
+            if (filters.province && filters.province.length > 0) {
+                document.getElementById('filter-province').value = filters.province.join(', ');
+            }
+            if (filters.organization_type && filters.organization_type.length > 0) {
+                document.getElementById('filter-org-type').value = filters.organization_type.join(', ');
+            }
             if (filters.year_from) {
                 document.getElementById('filter-year-from').value = filters.year_from;
             }
@@ -716,8 +743,9 @@
                 document.getElementById('filter-year-to').value = filters.year_to;
             }
             
-            // Mostrar sección de filtros si hay alguno aplicado
-            if (filters.framework || filters.year_from || filters.year_to) {
+            // Show filters section if any applied
+            if (filters.framework || filters.instrument || filters.country || filters.region || filters.province || 
+                filters.organization_type || filters.year_from || filters.year_to) {
                 document.getElementById('filters').style.display = 'block';
             }
         }
@@ -740,6 +768,18 @@
                 html += '</div>';
             }
             
+            if (feedback?.warning) {
+                html += '<div class="feedback-item">';
+                html += `<span class="feedback-value" style="color: #ff6b6b;">⚠️ ${feedback.warning}</span>`;
+                html += '</div>';
+            }
+
+            if (feedback?.info) {
+                html += '<div class="feedback-item">';
+                html += `<span class="feedback-value" style="color: #4dabf7;">ℹ️ ${feedback.info}</span>`;
+                html += '</div>';
+            }
+            
             if (feedback?.notes) {
                 html += '<div class="feedback-item">';
                 html += '<span class="feedback-label">Notes:</span> ';
@@ -747,9 +787,20 @@
                 html += '</div>';
             }
             
-            if (filters) {
+            var active_filters = (
+              filters.framework ||
+              filters.instrument ||
+              filters.year_from ||
+              filters.year_to ||
+              filters.country ||
+              filters.region ||
+              filters.province ||
+              filters.organization_type
+            )
+            
+            if (active_filters) {
                 html += '<div class="feedback-item">';
-                html += '<span class="feedback-label">Filtres detectats:</span>';
+                html += '<span class="feedback-label">Filtres actius:</span>';
                 html += '<div class="detected-filters">';
                 
                 if (filters.framework) {
@@ -757,11 +808,34 @@
                         html += `<span class="filter-tag">Framework: ${f}</span>`;
                     });
                 }
+                if (filters.instrument) {
+                    html += `<span class="filter-tag">Instrument: ${filters.instrument}</span>`;
+                }
                 if (filters.year_from || filters.year_to) {
                     const yearRange = filters.year_from && filters.year_to && filters.year_from === filters.year_to
                         ? `Any: ${filters.year_from}`
                         : `Any: ${filters.year_from || '...'} - ${filters.year_to || '...'}`;
                     html += `<span class="filter-tag">${yearRange}</span>`;
+                }
+                if (filters.country) {
+                    filters.country.forEach(c => {
+                        html += `<span class="filter-tag">País: ${c}</span>`;
+                    });
+                }
+                if (filters.region) {
+                    filters.region.forEach(r => {
+                        html += `<span class="filter-tag">Regió: ${r}</span>`;
+                    });
+                }
+                if (filters.province) {
+                    filters.province.forEach(p => {
+                        html += `<span class="filter-tag">Província: ${p}</span>`;
+                    });
+                }
+                if (filters.organization_type) {
+                    filters.organization_type.forEach(t => {
+                        html += `<span class="filter-tag">Tipus: ${t}</span>`;
+                    });
                 }
                 
                 html += '</div></div>';
@@ -785,31 +859,30 @@
             const kFactor = parseInt(document.getElementById('k-factor').value);
             const useParsing = document.getElementById('use-parsing').checked;
             
-            if (!query.trim()) {
-                alert('Introdueix una query de cerca');
-                return;
-            }
-            
             const resultsDiv = document.getElementById('results');
             resultsDiv.innerHTML = '<div class="loading">Cercant...</div>';
             
+            // Always read filters from UI, regardless of parsing mode
             let filters = null;
+            const framework = document.getElementById('filter-framework').value.trim();
+            const instrument = document.getElementById('filter-instrument').value.trim();
+            const country = document.getElementById('filter-country').value.trim();
+            const region = document.getElementById('filter-region').value.trim();
+            const province = document.getElementById('filter-province').value.trim();
+            const orgType = document.getElementById('filter-org-type').value.trim();
+            const yearFrom = document.getElementById('filter-year-from').value;
+            const yearTo = document.getElementById('filter-year-to').value;
             
-            if (!useParsing) {
-                const framework = document.getElementById('filter-framework').value.trim();
-                const ambit = document.getElementById('filter-ambit').value.trim();
-                const tft = document.getElementById('filter-tft').value.trim();
-                const yearFrom = document.getElementById('filter-year-from').value;
-                const yearTo = document.getElementById('filter-year-to').value;
-                
-                if (framework || ambit || tft || yearFrom || yearTo) {
-                    filters = {};
-                    if (framework) filters.framework = framework.split(',').map(s => s.trim());
-                    if (ambit) filters.ris3cat_ambit = ambit.split(',').map(s => s.trim());
-                    if (tft) filters.ris3cat_tft = tft.split(',').map(s => s.trim());
-                    if (yearFrom) filters.year_from = parseInt(yearFrom);
-                    if (yearTo) filters.year_to = parseInt(yearTo);
-                }
+            if (framework || instrument || country || region || province || orgType || yearFrom || yearTo) {
+                filters = {};
+                if (framework) filters.framework = framework.split(',').map(s => s.trim());
+                if (instrument) filters.instrument = instrument;
+                if (country) filters.country = country.split(',').map(s => s.trim());
+                if (region) filters.region = region.split(',').map(s => s.trim());
+                if (province) filters.province = province.split(',').map(s => s.trim());
+                if (orgType) filters.organization_type = orgType.split(',').map(s => s.trim());
+                if (yearFrom) filters.year_from = parseInt(yearFrom);
+                if (yearTo) filters.year_to = parseInt(yearTo);
             }
                        
             try {
@@ -874,11 +947,30 @@
             if (!data.results || data.results.length === 0) {
                 html += '<div class="info">No s\'han trobat resultats. Prova amb altres termes o ajusta els filtres.</div>';
             } else {
+                if (data.total_matching !== undefined) {
+                    if (data.total_matching > data.returned) {
+                        html = `<h2>Resultats (${data.returned} de ${data.total_matching} projectes)</h2>`;
+                    } else {
+                        html = `<h2>Resultats (${data.total_matching} projectes)</h2>`;
+                    }
+                } else {
+                    html = `<h2>Resultats (${data.returned})</h2>`;
+                }
                 data.results.forEach((result, idx) => {
                     const meta = result.metadata || {};
-                    const title = result.title || meta.title || meta.projectTitle || `Document ${result.id}`;
-                    const abstract = result.abstract || meta.abstract || meta.projectAbstract || result.text || 'Sense descripció disponible';
+                    const title = result.title || meta.title || `Document ${result.id}`;
+                    const abstract = result.abstract || meta.abstract || result.text || 'Sense descripció disponible';
                     const displayAbstract = abstract.length > 500 ? abstract.substring(0, 500) + '...' : abstract;
+                    
+                    // Format financial data
+                    const formatCurrency = (val) => {
+                        if (!val || isNaN(val)) return null;
+                        return new Intl.NumberFormat('ca-ES', {
+                            style: 'currency',
+                            currency: 'EUR',
+                            maximumFractionDigits: 0
+                        }).format(val);
+                    };
                     
                     html += `
                         <div class="result-item">
@@ -891,24 +983,29 @@
                             </div>
                             <div class="result-abstract">${displayAbstract}</div>
                             <div class="result-meta">
-                                ${meta.frameworkName ? `
+                                ${meta.framework_name ? `
                                     <div class="meta-item">
-                                        <span class="meta-label">Framework:</span> ${meta.frameworkName}
+                                        <span class="meta-label">Framework:</span> ${meta.framework_name}
                                     </div>
                                 ` : ''}
-                                ${meta.RIS3CAT_Ambit ? `
+                                ${meta.instrument_name ? `
                                     <div class="meta-item">
-                                        <span class="meta-label">Àmbit:</span> ${meta.RIS3CAT_Ambit}
+                                        <span class="meta-label">Instrument:</span> ${meta.instrument_name}
                                     </div>
                                 ` : ''}
-                                ${meta.RIS3CAT_TFT ? `
+                                ${meta.year ? `
                                     <div class="meta-item">
-                                        <span class="meta-label">TFT:</span> ${meta.RIS3CAT_TFT}
+                                        <span class="meta-label">Any:</span> ${parseInt(meta.year)}
                                     </div>
                                 ` : ''}
-                                ${meta.startingYear ? `
+                                ${formatCurrency(meta.total_investment) ? `
                                     <div class="meta-item">
-                                        <span class="meta-label">Any:</span> ${meta.startingYear}
+                                        <span class="meta-label">Inversió Total:</span> ${formatCurrency(meta.total_investment)}
+                                    </div>
+                                ` : ''}
+                                ${formatCurrency(meta.total_grant) ? `
+                                    <div class="meta-item">
+                                        <span class="meta-label">Subvenció:</span> ${formatCurrency(meta.total_grant)}
                                     </div>
                                 ` : ''}
                             </div>
@@ -921,23 +1018,23 @@
         }
         
         async function loadStats() {
-            const resultsDiv = document.getElementById('results');
-            resultsDiv.innerHTML = '<div class="loading">Carregant estadístiques...</div>';
+            const statsDiv = document.getElementById('stats-results');
+            statsDiv.innerHTML = '<div class="loading">Carregant informació del sistema...</div>';
             
             try {
                 const response = await fetch(`${API_URL}/health`);
                 const data = await response.json();
                 displayStats(data);
             } catch (error) {
-                resultsDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+                statsDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
             }
         }
-        
+
         function displayStats(data) {
-            const resultsDiv = document.getElementById('results');
+            const statsDiv = document.getElementById('stats-results');
             
             let html = `
-                <h2 style="margin-bottom: 20px;">Estadístiques del Sistema</h2>
+                <h2 style="margin-bottom: 20px;">Informació del Sistema</h2>
                 <div class="stats">
                     <div class="stat-card">
                         <div class="stat-value">${data.index_size || 0}</div>
@@ -962,7 +1059,7 @@
                         <li>Model d'Embeddings: mRoBERTA (BSC)</li>
                         <li>Backend Vectorial: HNSW (Hierarchical Navigable Small World)</li>
                         <li>Parser: Salamandra-7B fine-tuned</li>
-                        <li>API Version: 0.2.1</li>
+                        <li>API Version: 0.3.0</li>
                     </ul>
                 </div>
                 <div style="margin-top: 20px; padding: 20px; background: #fff3cd; border-radius: 10px;">
@@ -977,7 +1074,7 @@
                 </div>
             `;
             
-            resultsDiv.innerHTML = html;
+            statsDiv.innerHTML = html;
         }
         
         document.addEventListener('keydown', (e) => {
@@ -1003,4 +1100,3 @@
     </script>
 </body>
 </html>
-
