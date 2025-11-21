@@ -31,6 +31,8 @@ data/**/*
 *.pickle
 *.csv
 *.json
+!data/normalization/*.json
+
 *.parquet
 *.feather
 *.h5
