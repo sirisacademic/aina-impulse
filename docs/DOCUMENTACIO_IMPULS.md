@@ -119,13 +119,13 @@ Tota la documentació tècnica està disponible al repositori GitHub en anglès:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                        Client                                │
-│              (Interfície Web / Clients API)                  │
+│                        Client                               │
+│              (Interfície Web / Clients API)                 │
 └─────────────────────────────┬───────────────────────────────┘
                               │
 ┌─────────────────────────────▼───────────────────────────────┐
-│                      API Gateway                             │
-│                  (FastAPI - Port 8000)                       │
+│                      API Gateway                            │
+│                  (FastAPI - Port 8000)                      │
 │                                                             │
 │   /health    /search    /parse    /kb/search                │
 └──────┬──────────┬──────────┬──────────┬─────────────────────┘
