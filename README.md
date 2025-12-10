@@ -1,245 +1,336 @@
-# IMPULS - Multilingual Semantic Search for Catalonia's R&D Ecosystem
+# IMPULS - Multilingual Semantic Search for R&D Ecosystems
 
-**AINA Challenge 2024** - Building intelligent search infrastructure for the RIS3-MCAT platform
+**AINA Challenge 2024** | SIRIS Academic
 
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green.svg)](https://fastapi.tiangolo.com/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-## 🎯 Project Overview
+## 🎯 Overview
 
-IMPULS develops a multilingual semantic search system for Catalonia's research and innovation ecosystem, enabling natural language queries in Catalan, Spanish, Italian, and English over the RIS3-MCAT corpus of ~1,000 R&D projects.
+IMPULS is a **multilingual semantic search system** for research and innovation ecosystems, developed as part of the AINA Challenge 2024. It enables natural language queries in **Catalan, Spanish, and English** over the RIS3-MCAT corpus of ~27,000 R&D projects.
 
-This repository contains the **baseline implementation (WP1)** featuring:
-- **Semantic search** using multilingual embeddings (`langtech-innovation/mRoBERTA_retrieval`)
-- **Hybrid filtering** combining vector similarity with metadata constraints
-- **RESTful API** for integration with dashboards and applications
-- **Chunking strategies** for handling long project abstracts
-- **De-duplication** to show best matching content per project
+**🌐 Live Demo**: http://impuls-aina.sirisacademic.com:8080/impuls_ui.html  
+**📖 API Docs**: http://impuls-aina.sirisacademic.com:8000/docs
+
+### Key Features
+
+- **🤖 Intelligent Query Parsing**: Converts natural language queries into structured filters using fine-tuned Salamandra-7B
+- **🔍 Semantic Search**: Cross-lingual retrieval using fine-tuned mRoBERTA embeddings
+- **🔗 Query Expansion**: Automatic expansion with multilingual synonyms and broader concepts (4,265 Wikidata R&D concepts)
+- **📊 Knowledge Graph**: Interactive visualization of concept relationships
+- **🌍 Multilingual**: Full support for Catalan, Spanish, and English queries and documents
+
+## 🏗️ Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                        Web UI / API Clients                  │
+└─────────────────────────────┬───────────────────────────────┘
+                              │
+┌─────────────────────────────▼───────────────────────────────┐
+│                      FastAPI Gateway                         │
+│              Orchestration & Component Coordination          │
+└──────┬──────────────────────┬──────────────────────┬────────┘
+       │                      │                      │
+┌──────▼──────┐      ┌───────▼───────┐      ┌──────▼──────┐
+│   Query     │      │   Semantic    │      │  Query      │
+│   Parser    │      │   Search      │      │  Expansion  │
+│ Salamandra  │      │  mRoBERTA     │      │  Wikidata   │
+└─────────────┘      └───────────────┘      └─────────────┘
+```
 
 ## 🚀 Quick Start
 
 ### Prerequisites
+
 - Python 3.10+
-- 4GB RAM minimum (8GB recommended)
-- ~2GB disk space for models and indexes
+- 16GB RAM (32GB recommended for query parser)
+- GPU with 8GB+ VRAM (optional, for faster inference)
+- ~5GB disk space
 
 ### Installation
 
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/impuls.git
-cd impuls
+git clone https://github.com/sirisacademic/aina-impulse.git
+cd aina-impulse
 
 # Create virtual environment
 python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
+source .venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
 
-# Download NLTK data (for sentence tokenization)
+# Download NLTK data
 python -c "import nltk; nltk.download('punkt')"
+
+# Copy environment configuration
+cp .env.example .env
+# Edit .env with your settings
+```
+
+### Configuration
+
+Edit `.env` file:
+
+```bash
+# Embedding model
+EMBEDDER_MODEL_NAME=langtech-innovation/mRoBERTA_retrieval
+
+# Query parser (Salamandra)
+QUERY_PARSER_MODEL=BSC-LT/salamandra-7b-instruct-tools
+QUERY_PARSER_QUANTIZE=true  # Use 4-bit quantization to reduce memory
+
+# Data paths
+INDEX_DIR=data/index
+KB_PATH=data/kb/wikidata_kb.jsonl
+
+# API settings
+API_HOST=0.0.0.0
+API_PORT=8000
+API_KEY=your-secret-key
 ```
 
 ### Build the Index
 
 ```bash
-# Index the RIS3CAT dataset
-python scripts/build_index_from_pickle.py \
-  --input data/R3C_data.pkl \
-  --index-dir data/index \
-  --use-sentence-chunking \
-  --sentences-per-chunk 6 \
-  --include-context
+# Build vector index from project data
+python scripts/build_indices/build_index.py \
+  --input data/ris3cat/project_db.parquet \
+  --index-dir data/index
 ```
 
 ### Run the API
 
 ```bash
-# Start the FastAPI server
+# Development
 python run_api.py
 
-# API will be available at http://localhost:8000
-# Interactive docs at http://localhost:8000/docs
+# Production
+./run_api.sh
 ```
 
-### Test the Search
+API available at `http://localhost:8000`, docs at `http://localhost:8000/docs`
+
+## 📖 Usage Examples
+
+### Basic Semantic Search
 
 ```bash
-# Simple semantic search
 curl -X POST "http://localhost:8000/search" \
   -H "Content-Type: application/json" \
-  -d '{"query": "renewable energy solar panels", "k": 5}'
+  -H "X-API-Key: your-secret-key" \
+  -d '{"query": "machine learning for healthcare", "k": 10}'
+```
 
-# With metadata filters
+### Search with Intelligent Parsing
+
+```bash
 curl -X POST "http://localhost:8000/search" \
   -H "Content-Type: application/json" \
+  -H "X-API-Key: your-secret-key" \
   -d '{
-    "query": "artificial intelligence healthcare",
+    "query": "projectes IA en salut finançats per H2020 des de 2020",
     "k": 10,
-    "filters": {
-      "framework": ["H2020"],
-      "year_from": 2020,
-      "year_to": 2024
+    "use_parsing": true
+  }'
+```
+
+The parser automatically extracts:
+- **Semantic query**: "IA salut" (thematic content)
+- **Filters**: framework=H2020, year_from=2020
+
+### Search with Query Expansion
+
+```bash
+curl -X POST "http://localhost:8000/search" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your-secret-key" \
+  -d '{
+    "query": "blockchain",
+    "k": 20,
+    "use_parsing": true,
+    "expansion": {
+      "enabled": true,
+      "alias_levels": [1, 2],
+      "parent_levels": [1],
+      "return_details": true
     }
   }'
+```
+
+Expansion adds multilingual synonyms (cadena de bloques, cadena de blocs) and broader concepts (distributed systems, cryptography).
+
+### Knowledge Base Exploration
+
+```bash
+# Search concepts
+curl "http://localhost:8000/kb/search?q=machine+learning&limit=10"
+
+# Get concept details with parents/children
+curl "http://localhost:8000/kb/concept/Q2539"
 ```
 
 ## 📁 Project Structure
 
 ```
-impuls/
+aina-impulse/
 ├── data/
-│   ├── index/               # Vector index and metadata
-│   │   ├── vectors.hnsw     # HNSW vector index
-│   │   └── metadata.json    # Document metadata
-│   ├── meta/                # Enrichment tables
-│   │   ├── projects.parquet # Project-level metadata
-│   │   └── project_orgs.parquet # Organization relationships
-│   └── R3C_data.pkl        # Source dataset (not in repo)
-├── src/
-│   └── impulse/
-│       ├── api/            # FastAPI application
-│       ├── embedding/      # Text embedding module
-│       ├── vector_store/   # Vector storage backends
-│       └── settings.py     # Configuration
+│   ├── index/                    # Vector index (HNSW)
+│   ├── kb/                       # Knowledge base
+│   │   └── wikidata_kb.jsonl     # 4,265 R&D concepts
+│   ├── normalization/            # Mapping tables
+│   ├── ris3cat/                  # Project data
+│   ├── test/                     # Evaluation data
+│   └── training/                 # Training data for parser
+├── docs/                         # Documentation
+├── html/                         # Web UI
+│   └── impuls_ui.html
 ├── scripts/
-│   ├── build_index_from_pickle.py  # Index builder
-│   ├── query_api_search.py         # CLI search client
-│   └── inspect_pickle.py           # Dataset inspector
-├── html/
-│   └── impuls_demo_fastapi.html    # Web UI demo
-└── requirements.txt
+│   ├── build_indices/            # Index building
+│   ├── data_analysis/            # Data analysis tools
+│   ├── data_preparation/         # Data preparation
+│   └── training/                 # Model training scripts
+├── src/impulse/
+│   ├── api/main.py               # FastAPI application
+│   ├── embedding/embedder.py     # mRoBERTA embeddings
+│   ├── parser/query_parser.py    # Salamandra query parser
+│   ├── query_expansion/          # Wikidata-based expansion
+│   └── vector_store/             # HNSW vector storage
+├── .env.example                  # Environment template
+├── requirements.txt
+└── run_api.py
 ```
 
-## 🔧 API Endpoints
+## 🔧 API Reference
 
-### Health Check
-```http
-GET /health
-```
-Returns system status and index statistics.
+### Endpoints
 
-### Semantic Search
-```http
-POST /search
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/health` | GET | System status and statistics |
+| `/search` | POST | Semantic search with optional parsing and expansion |
+| `/parse` | POST | Parse query without searching |
+| `/kb/search` | GET | Search knowledge base concepts |
+| `/kb/concept/{id}` | GET | Get concept details with relationships |
+
+### Search Request Schema
+
+```json
 {
-  "query": "string",           # Search query
-  "k": 5,                      # Number of results
-  "k_factor": 5,               # Oversampling factor for filtering
-  "filters": {                 # Optional metadata filters
-    "framework": ["H2020"],
-    "year_from": 2020,
+  "query": "string",
+  "k": 10,
+  "k_factor": 5,
+  "filters": {
+    "framework": ["H2020", "Horizon Europe"],
+    "year_from": 2018,
     "year_to": 2024,
-    "ris3cat_ambit": ["Energia i recursos"],
-    "ris3cat_tft": ["Materials avançats"]
+    "country": ["Spain"],
+    "region": ["Catalunya"],
+    "organization_type": ["HES", "REC"]
+  },
+  "use_parsing": true,
+  "expansion": {
+    "enabled": true,
+    "alias_levels": [1, 2],
+    "parent_levels": [1],
+    "excluded_terms": [],
+    "return_details": false
   }
 }
 ```
 
-### Add Documents
-```http
-POST /add_documents
+### Search Response Schema
+
+```json
 {
-  "documents": [
+  "query": "original query",
+  "query_used": "parsed semantic query",
+  "filters": { ... },
+  "feedback": {
+    "query_rewrite": "human-readable interpretation"
+  },
+  "expansion": {
+    "query_language": "CA",
+    "alias_levels": { ... },
+    "parent_levels": { ... }
+  },
+  "total_matching": 150,
+  "returned": 10,
+  "results": [
     {
-      "id": "doc1",
-      "text": "Document content...",
-      "metadata": {"key": "value"}
+      "id": "project_123",
+      "title": "Project Title",
+      "abstract": "...",
+      "score": 0.87,
+      "matched_by": ["query", "machine learning", "IA"],
+      "metadata": { ... }
     }
   ]
 }
 ```
 
-## 🌐 Web Interface
+## 🧪 Evaluation Results
 
-Open `html/impuls_demo_fastapi.html` in a browser for an interactive search interface:
+### Query Parser (Salamandra-7B fine-tuned)
 
-1. Edit the `API_URL` variable in the HTML to match your server
-2. Open the file in a web browser
-3. Search with natural language queries
-4. Apply metadata filters for precise results
+| Metric | Score |
+|--------|-------|
+| JSON Validity | 100% |
+| Relaxed Accuracy | 65% |
+| Language Match | 87% |
+| Semantic Query Accuracy | 86% |
 
-## 🛠️ Configuration
+### Semantic Retrieval (mRoBERTA fine-tuned)
 
-Environment variables (`.env` file):
-```bash
-EMBEDDER_MODEL_NAME=langtech-innovation/mRoBERTA_retrieval
-INDEX_DIR=data/index
-VECTOR_BACKEND=hnsw
-API_HOST=0.0.0.0
-API_PORT=8000
-```
+| Metric | Base | Fine-tuned |
+|--------|------|------------|
+| Recall@1 | 34% | 65% |
+| Recall@10 | 71% | 91% |
+| MRR | 0.46 | 0.74 |
+| Cross-lingual R@1 | 19% | 49% |
 
-## 📊 Data Processing Pipeline
+## 🤝 AINA Models Used
 
-### 1. Document Chunking
-Projects are intelligently chunked to handle long abstracts while preserving context:
-- **Sentence-based chunking**: 6 sentences per chunk with 1-sentence overlap
-- **Title preservation**: Project title included in each chunk for context
-- **De-duplication**: Only best-scoring chunk per project returned
+This project fine-tunes and extends models from the AINA project (BSC):
 
-### 2. Metadata Enrichment
-- **Framework normalization**: H2020, Horizon Europe, ERDF variants mapped
-- **Year extraction**: From `startingYear` or `startingDate` fields
-- **RIS3CAT categories**: Sectoral areas and transversal technologies preserved
+| Base Model | Purpose | Fine-tuned Version |
+|------------|---------|-------------------|
+| `BSC-LT/salamandra-7b-instruct-tools` | Query parsing | Coming soon |
+| `langtech-innovation/mRoBERTA_retrieval` | Semantic embeddings | Coming soon |
 
-### 3. Hybrid Search
-- **Semantic similarity**: Cosine similarity in embedding space
-- **Metadata filtering**: Post-filters on framework, year, categories
-- **Score-based ranking**: Results ordered by relevance score
+### Datasets Generated (to be published)
 
-## 🔄 Development Roadmap
+- **Query-passage pairs**: 76k multilingual pairs (CA/ES/EN)
+- **Query parsing dataset**: 682 training + 100 test queries
+- **Scientific classification**: 19k abstracts, 19 categories
+- **R&D Knowledge Base**: 4,265 Wikidata concepts with multilingual labels
 
-### Current Release (WP1 - Baseline)
-- ✅ Multilingual semantic search
-- ✅ Metadata filtering
-- ✅ RESTful API
-- ✅ Web interface
-- ✅ Document chunking
+## 🏢 Acknowledgments
 
-### Upcoming Features (WP2-WP4)
-- 🚧 **Query parsing**: Natural language to structured JSON (Salamandra fine-tuning)
-- 🚧 **Named Entity Recognition**: Extract organizations, locations (DEBERTA_CIEL)
-- 🚧 **Query expansion**: WordNet and co-occurrence based expansion
-- 🚧 **Knowledge graph**: Navigable relationships between projects
-- 🚧 **Cross-lingual search**: Improved Catalan-English-Spanish-Italian alignment
-
-## 🤝 Contributing
-
-This project is part of the AINA Challenge 2024. Contributions welcome!
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+- **SIRIS Academic** - Project development
+- **Barcelona Supercomputing Center (BSC)** - AINA models and infrastructure
+- **Generalitat de Catalunya** - RIS3-MCAT platform and funding
 
 ## 📚 Documentation
 
-- [API Documentation](http://localhost:8000/docs) - Interactive API docs (when running)
-- [AINA Kit Models](https://huggingface.co/projecte-aina) - Language models used
-- [RIS3-MCAT Platform](https://ris3mcat.gencat.cat/) - Data source
-
-## 🏢 Partners & Acknowledgments
-
-**SIRIS Academic** - Project implementation
-
-**Barcelona Supercomputing Center (BSC)** - AINA Kit models and infrastructure
-
-**Generalitat de Catalunya** - RIS3-MCAT platform and funding
+| Document | Description |
+|----------|-------------|
+| [API Reference](docs/API.md) | Complete API documentation with examples |
+| [Architecture](docs/ARCHITECTURE.md) | System design and component details |
+| [Training Guide](docs/TRAINING.md) | How to train and evaluate models |
+| [Deployment Guide](docs/DEPLOYMENT.md) | Production deployment instructions |
 
 ## 📄 License
 
-This project is licensed under the MIT License - see [LICENSE](LICENSE) file for details.
+MIT License - see [LICENSE](LICENSE) for details.
 
 ## 📧 Contact
 
-For questions about the project:
-- Create an issue in this repository
-- Contact SIRIS Academic team
-- Visit the [AINA Challenge](https://projecteaina.cat/) website
+- **Issues**: [GitHub Issues](https://github.com/sirisacademic/aina-impulse/issues)
+- **AINA Challenge**: [projecteaina.cat](https://projecteaina.cat/)
 
 ---
 

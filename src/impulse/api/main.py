@@ -1,21 +1,31 @@
-from typing import Optional
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field
-from typing import List, Dict, Any, Optional
-from pathlib import Path
+import os
 import pandas as pd
 import logging
 import numpy as np
 import traceback
+
+from typing import List, Optional
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel, Field
+from typing import List, Dict, Any, Optional
+from pathlib import Path
 
 from src.impulse.parser import QueryParser
 from src.impulse.settings import settings
 from src.impulse.embedding.embedder import Embedder
 from src.impulse.vector_store.factory import build_store
 from src.impulse.query_expansion.loader import load_kb
-from src.impulse.query_expansion.expansion import expand_query_with_vectors
+from src.impulse.query_expansion.expansion import (
+    expand_query_with_vectors,
+    ExpansionConfig,
+    build_kb_index,
+    get_active_centroids,
+    get_expansion_summary
+)
 from src.impulse.normalization import (
     normalize_framework,
     normalize_org_type,
@@ -33,7 +43,10 @@ from src.impulse.normalization import (
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="IMPULSE WP1 Retrieval API", version="0.3.0")
+# API Key from environment
+API_KEY = os.getenv("IMPULSE_API_KEY", "")
+
+app = FastAPI(title="IMPULS-AINA API", version="1")
 
 # Add CORS middleware
 app.add_middleware(
@@ -46,10 +59,47 @@ app.add_middleware(
     max_age=3600,
 )
 
-# Global exception handler to ensure CORS headers on errors
+# Endpoints that don't require authentication
+PUBLIC_ENDPOINTS = {"/health", "/docs", "/openapi.json", "/redoc"}
+
+@app.middleware("http")
+async def verify_api_key(request: Request, call_next):
+    """Verify API key for protected endpoints"""
+    # Skip auth for OPTIONS requests (CORS preflight)
+    if request.method == "OPTIONS":
+        return await call_next(request)
+    
+    # Skip auth for public endpoints
+    if request.url.path in PUBLIC_ENDPOINTS:
+        return await call_next(request)
+    
+    # Skip auth if no API key is configured (development mode)
+    if not API_KEY:
+        return await call_next(request)
+    
+    # Check API key
+    provided_key = request.headers.get("X-API-Key")
+    
+    # TEMPORARY DEBUG - remove after testing
+    logger.info(f"API_KEY configured: '{API_KEY[:4]}...'")
+    logger.info(f"Provided key: '{provided_key[:4] if provided_key else None}...'")
+    
+    if provided_key != API_KEY:
+        return JSONResponse(
+            status_code=401,
+            content={"detail": "Invalid or missing API key"},
+            headers={
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "*",
+                "Access-Control-Allow-Headers": "*",
+            }
+        )
+    
+    return await call_next(request)
+
+# Global exception handler
 @app.exception_handler(Exception)
 async def global_exception_handler(request, exc):
-    """Catch all exceptions and return with CORS headers to prevent CORS errors from hiding real issues"""
     logger.error(f"Unhandled exception in {request.url.path}: {exc}")
     logger.error(traceback.format_exc())
     
@@ -67,21 +117,26 @@ async def global_exception_handler(request, exc):
         }
     )
 
-# Load the knowledge base for query expansion
+# Load the knowledge base and build index
 KB = load_kb(settings.KB_PATH)
+KB_INDEX = build_kb_index(KB)
+logger.info(f"Loaded KB with {len(KB)} concepts, {len(KB_INDEX)} indexed")
+
 
 class Document(BaseModel):
     id: str = Field(..., min_length=1)
     text: str = Field(..., min_length=1)
     metadata: Optional[Dict[str, Any]] = None
 
+
 class AddRequest(BaseModel):
     documents: List[Document]
+
 
 class MetaFilters(BaseModel):
     """Metadata filters with synonym support"""
     framework: Optional[List[str]] = None
-    instrument: Optional[str] = None  # Substring match
+    instrument: Optional[str] = None
     year_from: Optional[int] = None
     year_to: Optional[int] = None
     country: Optional[List[str]] = None
@@ -90,18 +145,29 @@ class MetaFilters(BaseModel):
     organization_type: Optional[List[str]] = None
     organisations: Optional[List[Dict[str, Optional[str]]]] = None
 
+
+class ExpansionSettings(BaseModel):
+    """User-controllable expansion settings"""
+    enabled: bool = False
+    alias_levels: List[int] = [1, 2]
+    parent_levels: List[int] = []
+    excluded_terms: List[str] = []  # NEW: Terms to exclude from search
+    return_details: bool = False
+
+
 class SearchRequest(BaseModel):
     query: str
     k: int = 5
     k_factor: int = 5
     filters: Optional[MetaFilters] = None
     use_parsing: bool = False
-    query_expansion: bool = False
-    return_expansion_vectors: bool = False
+    expansion: Optional[ExpansionSettings] = None
+
 
 class ParseRequest(BaseModel):
     query: str
     system_prompt: Optional[str] = None
+
 
 class ParseResponse(BaseModel):
     success: bool
@@ -109,12 +175,32 @@ class ParseResponse(BaseModel):
     error: Optional[str] = None
     raw_output: Optional[str] = None
 
+# ============================================================================
+# KB (Knowledge Base) Endpoints for Graph Exploration
+# ============================================================================
+
+class KBSearchResult(BaseModel):
+    wikidata_id: str
+    keyword: str
+    label_en: Optional[str] = None
+    label_es: Optional[str] = None
+    label_ca: Optional[str] = None
+
+
+class KBConceptDetail(BaseModel):
+    wikidata_id: str
+    keyword: str
+    labels: Dict[str, str]  # lang -> label
+    aliases: Dict[str, List[str]]  # lang -> list of aliases
+    definition: Optional[str] = None
+    parents: List[Dict[str, Any]]  # list of parent concepts
+    children: List[Dict[str, Any]]  # list of child concepts
+
 DATA_DIR = Path(settings.index_dir)
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 INDEX_PATH = DATA_DIR / "vectors.hnsw"
 META_PATH = DATA_DIR / "metadata.json"
 
-# Paths for parquet metadata files
 META_DIR = DATA_DIR.parent / "meta"
 PROJECTS_PARQUET = META_DIR / "projects.parquet"
 PARTICIPANTS_PARQUET = META_DIR / "participants.parquet"
@@ -125,14 +211,15 @@ _PROJECTS_METADATA = None
 _PARTICIPANTS_METADATA = None
 _PARSER = None
 
+
 def get_parser():
     global _PARSER
     if _PARSER is None:
         _PARSER = QueryParser()
     return _PARSER
 
+
 def load_metadata():
-    """Load project and participant metadata from parquet files at startup"""
     global _PROJECTS_METADATA, _PARTICIPANTS_METADATA
     
     if _PROJECTS_METADATA is not None:
@@ -142,12 +229,10 @@ def load_metadata():
     _PARTICIPANTS_METADATA = []
     
     try:
-        # Load projects
         if PROJECTS_PARQUET.exists():
             logger.info(f"Loading projects metadata from {PROJECTS_PARQUET}")
             projects_df = pd.read_parquet(PROJECTS_PARQUET)
             
-            # Create dictionary for fast project lookup
             for _, row in projects_df.iterrows():
                 project_id = row['project_id']
                 _PROJECTS_METADATA[project_id] = {
@@ -164,14 +249,10 @@ def load_metadata():
         else:
             logger.warning(f"Projects parquet not found: {PROJECTS_PARQUET}")
         
-        # Load participants for organization filtering
         if PARTICIPANTS_PARQUET.exists():
             logger.info(f"Loading participants metadata from {PARTICIPANTS_PARQUET}")
             participants_df = pd.read_parquet(PARTICIPANTS_PARQUET)
-            
-            # Store as list of dicts for easy filtering
             _PARTICIPANTS_METADATA = participants_df.to_dict('records')
-            
             logger.info(f"Loaded {len(_PARTICIPANTS_METADATA)} participant records")
         else:
             logger.warning(f"Participants parquet not found: {PARTICIPANTS_PARQUET}")
@@ -183,11 +264,13 @@ def load_metadata():
     
     return _PROJECTS_METADATA, _PARTICIPANTS_METADATA
 
+
 def get_embedder() -> Embedder:
     global _EMBEDDER
     if _EMBEDDER is None:
         _EMBEDDER = Embedder(model_name=settings.embedder_model_name, device=None)
     return _EMBEDDER
+
 
 def get_store():
     global _STORE
@@ -211,67 +294,48 @@ def get_store():
         _STORE = store
     return _STORE
 
-def pick_best_definition(definition_vectors, priority):
-    """Pick the first available definition in priority order."""
-    for lang in priority:
-        for d in definition_vectors:
-            if d["language"] == lang:
-                return d
-    return None
 
 def enrich_result_with_metadata(result: Dict[str, Any]) -> Dict[str, Any]:
     """Enrich search result with project metadata from parquet files"""
     projects_meta, participants_meta = load_metadata()
     
-    # Extract project ID (remove chunk suffix if present)
     doc_id = result.get('id', '')
     project_id = doc_id.split('#')[0] if '#' in doc_id else doc_id
     
-    # Get metadata from parquet
     if project_id in projects_meta:
         project_data = projects_meta[project_id]
         
         if 'metadata' not in result:
             result['metadata'] = {}
         
-        # Add title and abstract at top level
         result['title'] = project_data.get('title', '')
         result['abstract'] = project_data.get('abstract', '')
         
-        # Add remaining fields to metadata (exclude title/abstract to avoid duplication)
         for key, value in project_data.items():
             if key not in ('title', 'abstract'):
                 result['metadata'][key] = value
     
-    # Add participants
     project_participants = [p for p in participants_meta 
                            if p.get('project_id') == project_id]
     result['participants'] = project_participants
     
     return result
 
+
 def map_parsed_filters(parsed: Dict[str, Any]) -> Optional[MetaFilters]:
-    """
-    Convert parsed JSON filters to API filter format WITH synonym expansion.
-    
-    Returns filters with Lists of database values (synonym groups).
-    """
+    """Convert parsed JSON filters to API filter format WITH synonym expansion."""
     filters_data = parsed.get("filters", {})
     mapped = {}
     
-    # Framework WITH SYNONYM EXPANSION
-    # User: "h2020" → ["H2020", "HORIZON"]
     if filters_data.get("programme"):
         frameworks = normalize_framework(filters_data["programme"])
         if frameworks:
             mapped["framework"] = frameworks
     
-    # Year handling
     year_val = filters_data.get("year")
     if year_val:
         year_str = str(year_val).strip()
         
-        # Range: "2015-2020"
         if '-' in year_str and not year_str.startswith(('<', '>', '=')):
             parts = year_str.split('-')
             try:
@@ -279,7 +343,6 @@ def map_parsed_filters(parsed: Dict[str, Any]) -> Optional[MetaFilters]:
                 mapped["year_to"] = int(parts[1])
             except (ValueError, IndexError):
                 pass
-        # Comparisons: ">=2018", "<=2020", etc.
         elif year_str.startswith('>='):
             try:
                 mapped["year_from"] = int(year_str[2:])
@@ -300,7 +363,6 @@ def map_parsed_filters(parsed: Dict[str, Any]) -> Optional[MetaFilters]:
                 mapped["year_to"] = int(year_str[1:]) - 1
             except ValueError:
                 pass
-        # Exact year
         else:
             try:
                 y = int(year_str)
@@ -309,81 +371,62 @@ def map_parsed_filters(parsed: Dict[str, Any]) -> Optional[MetaFilters]:
             except ValueError:
                 pass
     
-    # Instrument (substring match, no normalization needed)
     if filters_data.get("instrument"):
         mapped["instrument"] = filters_data["instrument"]
     
-    # Location filters WITH NORMALIZATION
     if filters_data.get("location"):
         loc = filters_data["location"]
         
-        # Country
         country = loc.get("country")
         if country:
             mapped["country"] = [country] if isinstance(country, str) else country
         
-        # Region WITH SYNONYM EXPANSION
         region = loc.get("region")
         if region:
             regions = normalize_region(region)
             if regions:
                 mapped["region"] = regions
         
-        # Province WITH SYNONYM EXPANSION
         province = loc.get("province")
         if province:
             provinces = normalize_province(province)
             if provinces:
                 mapped["province"] = provinces
     
-    # Organization type WITH SYNONYM EXPANSION
     if filters_data.get("organization_type"):
         org_types = normalize_org_type(filters_data["organization_type"])
         if org_types:
             mapped["organization_type"] = org_types
     
-    # Organizations (top-level field, not in filters)
     if parsed.get("organisations"):
         orgs = parsed["organisations"]
         if not isinstance(orgs, list):
             orgs = [orgs]
-        
-        # Store for filtering
         mapped["organisations"] = orgs
     
     return MetaFilters(**mapped) if mapped else None
 
+
 def _norm(x):
-    """Simple normalization helper"""
     return (str(x) if x is not None else "").strip().lower()
 
+
 def _passes_filters(meta: Dict[str, Any], f: Optional[MetaFilters]) -> bool:
-    """
-    Check if metadata passes filters WITH SYNONYM MATCHING.
-    
-    For framework and organization_type, checks if metadata value matches
-    ANY value in the filter's synonym list.
-    """
+    """Check if metadata passes filters WITH SYNONYM MATCHING."""
     if not f:
         return True
 
-    # Framework filter WITH SYNONYM MATCHING
-    # meta might be "HORIZON", filter has ["H2020", "HORIZON"]
     if f.framework:
         meta_framework = meta.get("framework_name", "")
-        
-        # Check if metadata matches ANY synonym in filter list
         if not any(matches_framework(meta_framework, filter_fw) 
                    for filter_fw in f.framework):
             return False
 
-    # Instrument filter (substring match, case-insensitive)
     if f.instrument:
         meta_instrument = meta.get("instrument_name", "").lower()
         if f.instrument.lower() not in meta_instrument:
             return False
 
-    # Year filters
     year_val = meta.get("year_numeric") or meta.get("year")
     try:
         y = int(float(year_val)) if year_val else None
@@ -395,76 +438,59 @@ def _passes_filters(meta: Dict[str, Any], f: Optional[MetaFilters]) -> bool:
     if f.year_to is not None and (y is None or y > f.year_to):
         return False
 
-    # Country filter (simple matching)
     if f.country:
         meta_country = meta.get("country", "").strip().upper()
         if not any(c.strip().upper() == meta_country for c in f.country):
             return False
 
-    # Region filter WITH NORMALIZATION
     if f.region:
         meta_region = meta.get("region_norm") or meta.get("region", "")
-        
         if not any(matches_region(meta_region, filter_region) 
                    for filter_region in f.region):
             return False
 
-    # Province filter WITH NORMALIZATION
     if f.province:
         meta_province = meta.get("province_norm") or meta.get("province", "")
-        
         if not any(matches_province(meta_province, filter_province) 
                    for filter_province in f.province):
             return False
 
-    # Organization type filter WITH SYNONYM MATCHING
-    # meta might be "PRC", filter has ["EMPRESA", "PRC"]
     if f.organization_type:
         meta_org_type = meta.get("organization_type", "")
-        
-        # Check if metadata matches ANY synonym in filter list
         if not any(matches_org_type(meta_org_type, filter_type) 
                    for filter_type in f.organization_type):
             return False
 
-    # Organizations filter (name + type + location)
-    # Multiple orgs = ALL must participate (AND logic per prompt)
     if f.organisations:
         project_id = meta.get("project_id")
         if not project_id:
             return False
         
-        # Get participants for this project
         _, participants = load_metadata()
         project_orgs = [p for p in participants 
                         if p.get('project_id') == project_id]
         
         if not project_orgs:
-            return False  # No participants = can't match
+            return False
         
-        # Check each filter org (ALL must match)
         for filter_org in f.organisations:
             org_name = filter_org.get('name')
             org_type = filter_org.get('type')
             org_location = filter_org.get('location')
             org_location_level = filter_org.get('location_level')
             
-            # Find matching participant
             match_found = False
             for p in project_orgs:
-                # Check name if specified (using ROR normalization)
                 name_match = True
                 if org_name:
                     p_name = p.get('organization_name', '')
                     name_match = matches_organization(p_name, org_name)
                 
-                # Check type if specified (using synonym matching)
                 type_match = True
                 if org_type:
                     p_type = p.get('organization_type', '')
                     type_match = matches_org_type(p_type, org_type)
                 
-                # Check location if specified (using normalization)
                 location_match = True
                 if org_location:
                     if org_location_level == 'region':
@@ -477,7 +503,6 @@ def _passes_filters(meta: Dict[str, Any], f: Optional[MetaFilters]) -> bool:
                         p_country = p.get('country', '')
                         location_match = _norm(p_country) == _norm(org_location)
                     else:
-                        # No level specified, try all
                         p_region = p.get('region_norm') or p.get('region', '')
                         p_province = p.get('province_norm') or p.get('province', '')
                         p_country = p.get('country', '')
@@ -487,15 +512,96 @@ def _passes_filters(meta: Dict[str, Any], f: Optional[MetaFilters]) -> bool:
                             _norm(p_country) == _norm(org_location)
                         )
                 
-                # All specified criteria must match
                 if name_match and type_match and location_match:
                     match_found = True
                     break
             
             if not match_found:
-                return False  # This org requirement not met
+                return False
 
     return True
+
+
+def search_with_expansion(
+    query_vec: np.ndarray,
+    expansion_result: Dict,
+    store,
+    k: int,
+    k_factor: int,
+    alias_levels: List[int] = [1, 2],
+    parent_levels: List[int] = [],
+    excluded_terms: List[str] = []  # NEW parameter
+) -> List[Dict]:
+    """
+    Execute search using query vector + expansion centroid vectors.
+    
+    Strategy: 
+    - Search with each vector separately
+    - Merge results, keeping highest score per document
+    - Weight original query higher than expansions
+    """
+    total_docs = len(getattr(store, "id_map", []))
+    kk = min(k * max(1, k_factor * 2), total_docs)
+    
+    # Weight for expansion matches (slightly lower than direct query)
+    EXPANSION_WEIGHT = 0.9
+    
+    # Convert excluded_terms to lowercase set for comparison
+    excluded_set = {term.lower() for term in excluded_terms}
+    
+    # Track best score per document
+    doc_scores: Dict[str, Dict] = {}
+    
+    # 1. Search with original query (weight = 1.0)
+    hits_base = store.query(query_vec, k=kk)
+    for hit in hits_base:
+        doc_id = hit["id"]
+        doc_scores[doc_id] = {
+            "id": doc_id,
+            "score": hit["score"],
+            "metadata": hit.get("metadata", {}),
+            "matched_by": ["query"]
+        }
+    
+    # 2. Search with expansion centroids
+    centroids = get_active_centroids(
+        expansion_result,
+        alias_levels=alias_levels,
+        parent_levels=parent_levels
+    )
+    
+    for centroid_info in centroids:
+        # NEW: Skip excluded terms
+        if centroid_info["representative"].lower() in excluded_set:
+            continue
+            
+        centroid_vec = np.array(centroid_info["centroid"])
+        hits = store.query(centroid_vec, k=kk)
+        
+        for hit in hits:
+            doc_id = hit["id"]
+            weighted_score = hit["score"] * EXPANSION_WEIGHT
+            
+            if doc_id in doc_scores:
+                # Update if better score, always track matched_by
+                if weighted_score > doc_scores[doc_id]["score"]:
+                    doc_scores[doc_id]["score"] = weighted_score
+                if centroid_info["representative"] not in doc_scores[doc_id]["matched_by"]:
+                    doc_scores[doc_id]["matched_by"].append(centroid_info["representative"])
+            else:
+                doc_scores[doc_id] = {
+                    "id": doc_id,
+                    "score": weighted_score,
+                    "metadata": hit.get("metadata", {}),
+                    "matched_by": [centroid_info["representative"]]
+                }
+    
+    # Convert to list and sort
+    results = list(doc_scores.values())
+    results.sort(key=lambda x: x["score"], reverse=True)
+    
+    return results
+
 
 @app.on_event("startup")
 async def startup_event():
@@ -504,6 +610,7 @@ async def startup_event():
     load_metadata()
     logger.info("Startup complete")
    
+
 @app.get("/health")
 def health():
     store = get_store()
@@ -519,7 +626,10 @@ def health():
         "index_size": size,
         "projects_metadata_loaded": projects_loaded,
         "participants_metadata_loaded": participants_loaded,
-        "parser_loaded": parser_loaded
+        "parser_loaded": parser_loaded,
+        "kb_concepts": len(KB),
+        "kb_indexed": len(KB_INDEX),
+        "auth_enabled": bool(API_KEY)  # NEW: indicates if auth is active
     }
 
 @app.post("/add_documents")
@@ -539,6 +649,7 @@ def add_documents(req: AddRequest):
     store.save()
     return {"added": len(ids)}
 
+
 @app.post("/parse", response_model=ParseResponse)
 def parse_query(req: ParseRequest):
     """Parse natural language query to structured JSON"""
@@ -550,6 +661,7 @@ def parse_query(req: ParseRequest):
     
     return ParseResponse(**result)
 
+
 @app.post("/search")
 def search(req: SearchRequest):
     # Allow empty query only if filters are provided
@@ -559,31 +671,29 @@ def search(req: SearchRequest):
     query_text = req.query
     filters = req.filters
     feedback = None
+    query_language = None
     
-    # Parse query if requested and query is not empty
+    # Parse query if requested
     if req.use_parsing and req.query.strip():
         parser = get_parser()
         parse_result = parser.parse(req.query)
         
         if parse_result["success"]:
             parsed = parse_result["parsed"]
-            
-            # Extract feedback
             meta = parsed.get("meta", {})
+            
             feedback = {
                 "query_rewrite": parsed.get("query_rewrite"),
                 "notes": meta.get("notes"),
-                "parsed_json": parsed  # Include full parsed JSON
+                "parsed_json": parsed
             }
             
-            # Use semantic_query if available
             query_text = parsed.get("semantic_query") or req.query
+            query_language = meta.get("lang")
             
-            # Map parsed filters and merge with existing user filters
             parsed_filters = map_parsed_filters(parsed)
             if parsed_filters:
                 if filters:
-                    # Merge: user filters take precedence over parsed filters
                     merged = parsed_filters.dict()
                     user_dict = filters.dict()
                     for key, value in user_dict.items():
@@ -596,62 +706,65 @@ def search(req: SearchRequest):
             logger.warning(f"Parsing failed: {parse_result.get('error')}")
             feedback = {"error": "Could not parse query, using direct search"}
     
-    # -------- Query Expansion (Definition-based) -------------------
-    expansion_data = None
-    definition_vectors = []
-
+    # Get embedder and store
     emb = get_embedder()
-
-    if req.query_expansion and query_text.strip():
-        expansion_data = expand_query_with_vectors(
-            query=query_text,
-            kb=KB,
-            encoder=emb,
-            languages=["en", "es", "ca"]
-        )
-        
-        # Extract vectors for search
-        definition_vectors = expansion_data["definition_vectors"]
-
-    # Execute search
     store = get_store()
     total = len(getattr(store, "id_map", []))
     
-    # Determine k for vector search
+    # Handle empty query (filter-only search)
     if not query_text.strip():
-        # Filter-only search: use configurable max to avoid HNSW index limits
         kk = min(settings.max_filter_only_retrieve, total)
-        qv_base = np.zeros(emb.get_dim())
-        logger.info(f"Filter-only search: retrieving {kk}/{total} documents for filtering")
+        query_vec = np.zeros(emb.get_dim())
+        logger.info(f"Filter-only search: retrieving {kk}/{total} documents")
+        hits = store.query(query_vec, k=kk)
     else:
-        # Normal semantic search
-        kk = min(req.k * max(1, req.k_factor * 2), total)
-        qv_base = emb.encode([query_text])[0]
-    
-    # First search: base query
-    hits_base = store.query(qv_base, k=kk)
-
-    # --- Definition-expanded searches ---
-    hits_expanded = []
-
-    if definition_vectors:
-        # Select ONLY the best definition using priority
-        PRIORITY = ["en", "es", "ca"]
-        best_def = pick_best_definition(definition_vectors, PRIORITY)
-
-        if best_def:
-            vec = best_def["vector"]
-            h = store.query(vec, k=kk)
-
-            # Annotate for explainability
-            for item in h:
-                item["expansion_language"] = best_def["language"]
-                item["expansion_definition"] = best_def["definition"]
-
-            hits_expanded.extend(h)
-    
-    # Combine: base + expanded
-    hits = hits_base + hits_expanded
+        # Embed query
+        query_vec = emb.encode([query_text])[0]
+        
+        # Query Expansion (v3)
+        expansion_result = None
+        expansion_summary = None
+        
+        expansion_enabled = (
+            req.expansion is not None and 
+            req.expansion.enabled and 
+            query_text.strip()
+        )
+        
+        if expansion_enabled:
+            config = ExpansionConfig(
+                use_aliases=True,
+                use_parents=bool(req.expansion.parent_levels),
+                languages=["en", "es", "ca"]
+            )
+            
+            expansion_result = expand_query_with_vectors(
+                query=query_text,
+                kb=KB,
+                encoder=emb,
+                config=config,
+                kb_index=KB_INDEX,
+                query_language=query_language
+            )
+            
+            if req.expansion.return_details:
+                expansion_summary = get_expansion_summary(expansion_result)
+        
+        # Execute search
+        if expansion_result:
+            hits = search_with_expansion(
+                query_vec=query_vec,
+                expansion_result=expansion_result,
+                store=store,
+                k=req.k,
+                k_factor=req.k_factor,
+                alias_levels=req.expansion.alias_levels,
+                parent_levels=req.expansion.parent_levels,
+                excluded_terms=req.expansion.excluded_terms  # NEW: pass excluded terms
+            )
+        else:
+            kk = min(req.k * max(1, req.k_factor * 2), total)
+            hits = store.query(query_vec, k=kk)
     
     # Enrich with metadata
     enriched_hits = [enrich_result_with_metadata(h) for h in hits]
@@ -659,14 +772,11 @@ def search(req: SearchRequest):
     # Apply filters
     filtered = [h for h in enriched_hits if _passes_filters(h.get("metadata", {}), filters)]
     
-    # Track if results were limited
-    results_limited = False
+    # Track totals
     total_matching = len(filtered)
+    results_limited = total_matching > settings.max_results_warning_threshold
     
-    if total_matching > settings.max_results_warning_threshold:
-        results_limited = True
-    
-    # De-duplicate by project (keep highest score)
+    # Deduplicate by project
     seen_projects = {}
     deduplicated = []
     
@@ -686,44 +796,205 @@ def search(req: SearchRequest):
     deduplicated.sort(key=lambda x: x.get('score', 0), reverse=True)
     results = deduplicated[:req.k]
     
+    # Build response
     response = {
         "query": req.query,
         "query_used": query_text,
         "k": req.k,
         "returned": len(results),
         "total_matching": total_matching,
-        "filters": filters.dict() if filters else None,
+        "filters": filters.dict() if filters else {},
         "results": results
     }
     
-    # Add warning if many results found
+    # Add expansion info if requested
+    if expansion_enabled and expansion_summary:
+        response["expansion"] = expansion_summary
+    
+    # Add feedback/warnings
     if results_limited:
         if not feedback:
             feedback = {}
         feedback["warning"] = (
             f"Found {total_matching} matching projects. "
             f"Showing top {len(results)}. "
-            f"Consider adding more specific filters to narrow results."
+            f"Consider adding more specific filters."
         )
     
-    # Add info about filter-only search limits
     if not query_text.strip() and total_matching == kk:
         if not feedback:
             feedback = {}
         feedback["info"] = (
-            f"Filter-only search limited to {kk} documents for performance. "
-            f"Use a semantic query for better ranking of large result sets."
+            f"Filter-only search limited to {kk} documents. "
+            f"Use a semantic query for better ranking."
         )
     
     if feedback:
         response["feedback"] = feedback
-
-    # Add expansion data if requested
-    if req.return_expansion_vectors and expansion_data:
-        response["expansion"] = {
-            "query_vector": expansion_data["query_vector"],
-            "definition_vectors": expansion_data["definition_vectors"],
-            "aliases": expansion_data["aliases"]
-        }
     
     return response
+    
+@app.get("/kb/search", response_model=List[KBSearchResult])
+def kb_search(q: str, limit: int = 10):
+    """
+    Search for concepts in the knowledge base.
+    Returns top matching concepts by keyword/label.
+    """
+    if not q or len(q.strip()) < 2:
+        return []
+    
+    query_lower = q.strip().lower()
+    results = []
+    seen_ids = set()
+    
+    for concept in KB:
+        wikidata_id = concept.get("wikidata_id", "")
+        if wikidata_id in seen_ids:
+            continue
+            
+        keyword = concept.get("keyword", "")
+        langs = concept.get("languages", {})
+        
+        # Check keyword match
+        score = 0
+        if query_lower == keyword.lower():
+            score = 100  # Exact match
+        elif keyword.lower().startswith(query_lower):
+            score = 80  # Prefix match
+        elif query_lower in keyword.lower():
+            score = 60  # Contains match
+        
+        # Check label matches
+        for lang in ["en", "es", "ca"]:
+            label = langs.get(lang, {}).get("label", "")
+            if label:
+                if query_lower == label.lower():
+                    score = max(score, 95)
+                elif label.lower().startswith(query_lower):
+                    score = max(score, 75)
+                elif query_lower in label.lower():
+                    score = max(score, 55)
+        
+        # Check aliases
+        for lang in ["en", "es", "ca"]:
+            aliases = langs.get(lang, {}).get("also_known_as", [])
+            for alias in aliases:
+                if alias and query_lower in alias.lower():
+                    score = max(score, 50)
+                    break
+        
+        if score > 0:
+            seen_ids.add(wikidata_id)
+            results.append({
+                "wikidata_id": wikidata_id,
+                "keyword": keyword,
+                "label_en": langs.get("en", {}).get("label"),
+                "label_es": langs.get("es", {}).get("label"),
+                "label_ca": langs.get("ca", {}).get("label"),
+                "_score": score
+            })
+    
+    # Sort by score and limit
+    results.sort(key=lambda x: x["_score"], reverse=True)
+    
+    # Remove internal score before returning
+    for r in results:
+        del r["_score"]
+    
+    return results[:limit]
+
+
+@app.get("/kb/concept/{wikidata_id}")
+def kb_concept(wikidata_id: str):
+    """
+    Get detailed information about a concept including parents and children.
+    """
+    # Find the concept
+    concept = None
+    for c in KB:
+        if c.get("wikidata_id") == wikidata_id:
+            concept = c
+            break
+    
+    if not concept:
+        raise HTTPException(status_code=404, detail=f"Concept not found: {wikidata_id}")
+    
+    langs = concept.get("languages", {})
+    
+    # Build labels dict
+    labels = {}
+    for lang in ["en", "es", "ca"]:
+        label = langs.get(lang, {}).get("label")
+        if label:
+            labels[lang] = label
+    
+    # Build aliases dict
+    aliases = {}
+    for lang in ["en", "es", "ca"]:
+        aka = langs.get(lang, {}).get("also_known_as", [])
+        if aka:
+            aliases[lang] = aka
+    
+    # Get definition (prefer English)
+    definition = None
+    for lang in ["en", "es", "ca"]:
+        defn = langs.get(lang, {}).get("definition")
+        if defn:
+            definition = defn
+            break
+    
+    # Get parents (from subclass_of)
+    parents = []
+    for parent_ref in concept.get("subclass_of", []):
+        parent_id = parent_ref.get("id", "")
+        parent_label = parent_ref.get("label", "")
+        
+        # Try to get more info from KB_INDEX
+        if parent_id in KB_INDEX:
+            parent_concept = KB_INDEX[parent_id]
+            parent_langs = parent_concept.get("languages", {})
+            parents.append({
+                "wikidata_id": parent_id,
+                "keyword": parent_concept.get("keyword", parent_label),
+                "label_en": parent_langs.get("en", {}).get("label"),
+                "label_es": parent_langs.get("es", {}).get("label"),
+                "label_ca": parent_langs.get("ca", {}).get("label"),
+                "in_kb": True
+            })
+        else:
+            parents.append({
+                "wikidata_id": parent_id,
+                "keyword": parent_label,
+                "label_en": parent_label,
+                "label_es": None,
+                "label_ca": None,
+                "in_kb": False
+            })
+    
+    # Find children (concepts that have this as parent)
+    children = []
+    for c in KB:
+        for parent_ref in c.get("subclass_of", []):
+            if parent_ref.get("id") == wikidata_id:
+                c_langs = c.get("languages", {})
+                children.append({
+                    "wikidata_id": c.get("wikidata_id"),
+                    "keyword": c.get("keyword"),
+                    "label_en": c_langs.get("en", {}).get("label"),
+                    "label_es": c_langs.get("es", {}).get("label"),
+                    "label_ca": c_langs.get("ca", {}).get("label"),
+                    "in_kb": True
+                })
+                break
+    
+    return {
+        "wikidata_id": wikidata_id,
+        "keyword": concept.get("keyword", ""),
+        "labels": labels,
+        "aliases": aliases,
+        "definition": definition,
+        "parents": parents,
+        "children": children
+    }
+    
+

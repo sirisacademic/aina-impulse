@@ -107,9 +107,12 @@ __pycache__/
 .env
 
 *BKP*
+*bkp*
 old/
 
 TODO.*
 
 .git-credentials
 README-*
+
+project_structure.sh

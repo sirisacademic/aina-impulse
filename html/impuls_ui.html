@@ -3,1100 +3,149 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IMPULS - Sistema de Cerca Semàntica</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
-        
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        
-        header {
-            background: white;
-            border-radius: 15px;
-            padding: 30px;
-            margin-bottom: 30px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        }
-        
-        h1 {
-            color: #333;
-            margin-bottom: 10px;
-        }
-        
-        .subtitle {
-            color: #666;
-            font-size: 14px;
-        }
-        
-        .status-badge {
-            display: inline-block;
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            margin-left: 10px;
-        }
-        
-        .status-badge.online {
-            background: #d4edda;
-            color: #155724;
-        }
-        
-        .status-badge.offline {
-            background: #f8d7da;
-            color: #721c24;
-        }
-        
-        .search-section {
-            background: white;
-            border-radius: 15px;
-            padding: 30px;
-            margin-bottom: 30px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        }
-        
-        .search-box {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-        
-        input[type="text"], input[type="number"] {
-            flex: 1;
-            padding: 15px 20px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            font-size: 16px;
-            transition: all 0.3s;
-        }
-        
-        input[type="text"]:focus, input[type="number"]:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-        
-        button {
-            padding: 8px 15px;
-            background: darkslateblue;
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-        
-        button:hover {
-            transform: translateY(-2px);
-        }
-        
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        
-        .options {
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-        
-        .option-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .option-group label {
-            font-size: 14px;
-            color: #666;
-        }
-        
-        .checkbox-group {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 15px;
-            background: #f0f7ff;
-            border-radius: 8px;
-            border: 2px solid #667eea;
-        }
-        
-        .checkbox-group input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
-        }
-        
-        .checkbox-group label {
-            font-weight: 600;
-            color: #667eea;
-            cursor: pointer;
-            margin: 0;
-        }
-        
-        .tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #e0e0e0;
-        }
-        
-        .tab {
-            padding: 10px 20px;
-            background: none;
-            border: none;
-            color: #666;
-            cursor: pointer;
-            position: relative;
-            transition: color 0.3s;
-        }
-        
-        .tab.active {
-            color: #667eea;
-        }
-        
-        .tab.active::after {
-            content: '';
-            position: absolute;
-            bottom: -2px;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: #667eea;
-        }
-        
-        .tab.coming-soon {
-            position: relative;
-        }
-        
-        .tab.coming-soon::before {
-            content: 'WP2+';
-            position: absolute;
-            top: -5px;
-            right: -15px;
-            background: #ffc107;
-            color: #333;
-            padding: 2px 5px;
-            border-radius: 10px;
-            font-size: 9px;
-            font-weight: bold;
-        }
-        
-        .tab-content {
-            display: none;
-        }
-        
-        .tab-content.active {
-            display: block;
-        }
-        
-        .coming-soon-message {
-            text-align: center;
-            padding: 60px 20px;
-            color: #666;
-        }
-        
-        .coming-soon-message h3 {
-            color: #333;
-            margin-bottom: 10px;
-        }
-        
-        .filters-toggle {
-        }
-        
-        .filters-content {
-            display: none;
-            margin-top: 20px;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 10px;
-        }
-        
-        .filters-content.show {
-            display: block;
-        }
-        
-        .filters-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 15px;
-        }
-        
-        .filter-group {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-        
-        .filter-group label {
-            font-size: 13px;
-            font-weight: 600;
-            color: #555;
-        }
-        
-        .filter-group input {
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 14px;
-        }
-        
-        .results {
-            margin-top: 30px;
-        }
-        
-        .result-item {
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 15px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            transition: transform 0.2s;
-        }
-        
-        .result-item:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
-        
-        .result-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: start;
-            margin-bottom: 10px;
-        }
-        
-        .result-title {
-            font-size: 18px;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 5px;
-        }
-        
-        .result-score {
-            background: #667eea;
-            color: white;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: 600;
-            white-space: nowrap;
-        }
-        
-        .result-abstract {
-            color: #555;
-            line-height: 1.6;
-            margin-bottom: 15px;
-        }
-        
-        .result-meta {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            font-size: 13px;
-        }
-        
-        .meta-item {
-            padding: 5px 12px;
-            background: #f0f0f0;
-            border-radius: 6px;
-            color: #555;
-        }
-        
-        .meta-label {
-            font-weight: 600;
-            color: #333;
-        }
-        
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: #666;
-            font-size: 18px;
-        }
-        
-        .error {
-            background: #fee;
-            border: 1px solid #fcc;
-            color: #c33;
-            padding: 15px;
-            border-radius: 10px;
-            margin: 20px 0;
-        }
-        
-        .info {
-            background: #e3f2fd;
-            border: 1px solid #90caf9;
-            color: #1976d2;
-            padding: 15px;
-            border-radius: 10px;
-            margin: 20px 0;
-        }
-        
-        .feedback-section {
-            background: #f0f7ff;
-            border: 2px solid #667eea;
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-        
-        .feedback-section h4 {
-            color: #667eea;
-            margin-bottom: 15px;
-        }
-        
-        .feedback-item {
-            margin-bottom: 10px;
-        }
-        
-        .feedback-label {
-            font-weight: 600;
-            color: #555;
-        }
-        
-        .feedback-value {
-            color: #333;
-        }
-        
-        .detected-filters {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 8px;
-        }
-        
-        .filter-tag {
-            background: #667eea;
-            color: white;
-            padding: 5px 12px;
-            border-radius: 15px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-        
-        .debug-section {
-            margin-top: 20px;
-            background: #f8f9fa;
-            border-radius: 10px;
-            overflow: hidden;
-        }
-        
-        .debug-header {
-            background: #343a40;
-            color: white;
-            padding: 12px 20px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .debug-icon {
-            font-size: 12px;
-        }
-        
-        .debug-content {
-            display: none;
-            padding: 20px;
-        }
-        
-        .debug-content.show {
-            display: block;
-        }
-        
-        .debug-box {
-            background: #2d2d2d;
-            color: #f8f8f2;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            overflow-x: auto;
-        }
-        
-        .debug-box h4 {
-            color: #f8f8f2;
-            margin-bottom: 10px;
-        }
-        
-        .debug-box pre {
-            margin: 0;
-            font-family: 'Courier New', monospace;
-            font-size: 13px;
-            line-height: 1.5;
-            white-space: pre-wrap;
-        }
-        
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        
-        .stat-card {
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            text-align: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        }
-        
-        .stat-value {
-            font-size: 36px;
-            font-weight: 700;
-            color: #667eea;
-            margin-bottom: 10px;
-        }
-        
-        .stat-label {
-            color: #666;
-            font-size: 14px;
-        }
-    </style>
+    <title>IMPULS-AINA - Sistema de Cerca Semàntica</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <link rel="stylesheet" href="css/impuls_styles.css">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>🔍 IMPULS - Prototip 2</h1>
-            <h2 style="color: #667eea; font-size: 20px; margin-bottom: 10px;">Sistema de Cerca Semàntica</h2>
+            <h1>🔍 IMPULS-AINA</h1>
+            <h2 style="color: #667eea; font-size: 20px; margin-bottom: 10px;">Sistema de Cerca Semàntica per R+D+I</h2>
             <p class="subtitle">
                 Projecte AINA Challenge 2024 - Cerca multilingüe per RIS3MCAT
                 <span id="status-badge" class="status-badge offline">Offline</span>
             </p>
         </header>
-
         <div class="search-section">
             <div class="tabs">
                 <button class="tab active" onclick="switchTab('search')">Cerca Semàntica</button>
-                <button class="tab coming-soon" onclick="switchTab('entities')">Extracció d'Entitats</button>
-                <button class="tab coming-soon" onclick="switchTab('expansion')">Expansió de Query</button>
-                <button class="tab coming-soon" onclick="switchTab('graph')">Graf de Coneixement</button>
+                <button class="tab" onclick="switchTab('graph')">Graf de Coneixement</button>
                 <button class="tab" onclick="switchTab('stats')">Informació del Sistema</button>
             </div>
 
+            <!-- Search Tab -->
             <div id="search-tab" class="tab-content active">
                 <div class="search-box">
-                    <input type="text" id="search-input" 
-                           placeholder="Cerca projectes... (ex: projectes d'IA en salut finançats per H2020)">
+                    <input type="text" id="search-input" placeholder="Cerca projectes... (ex: projectes d'IA en salut, energies renovables)">
                     <button onclick="performSearch()">Cercar</button>
                 </div>
-
-                <div class="options">
-                    <div class="checkbox-group">
-                        <input type="checkbox" id="use-parsing" checked>
-                        <label for="use-parsing">🤖 Parsing Intel·ligent</label>
+                <div class="options-section">
+                    <div class="options-row">
+                        <div class="checkbox-group active" onclick="toggleCheckbox('use-parsing')">
+                            <input type="checkbox" id="use-parsing" checked>
+                            <label>🤖 Parsing Intel·ligent</label>
+                        </div>
+                        <div class="checkbox-group active" onclick="toggleCheckbox('use-expansion')">
+                            <input type="checkbox" id="use-expansion" checked>
+                            <label>🔗 Expansió Semàntica</label>
+                        </div>
+                        <div class="option-group">
+                            <label>Resultats:</label>
+                            <select id="top-k">
+                                <option value="5">5</option>
+                                <option value="10">10</option>
+                                <option value="20">20</option>
+                                <option value="50" selected>50</option>
+                            </select>
+                        </div>
                     </div>
-                    <div class="option-group">
-                        <label>Resultats (k):</label>
-                        <select id="top-k">
-                            <option value="3">3</option>
-                            <option value="5" selected>5</option>
-                            <option value="10">10</option>
-                            <option value="20">20</option>
-                        </select>
+                    <div id="expansion-controls" class="expansion-controls show">
+                        <div class="expansion-section">
+                            <div class="expansion-title"><span class="icon">🌐</span> Termes equivalents</div>
+                            <div class="expansion-hint">Inclou el mateix concepte en altres idiomes i termes equivalents</div>
+                            <div class="level-checkboxes">
+                                <label class="level-checkbox checked" onclick="toggleLevel(this, 'alias', 1)"><input type="checkbox" checked> Molt similars</label>
+                                <label class="level-checkbox checked" onclick="toggleLevel(this, 'alias', 2)"><input type="checkbox" checked> Termes propers</label>
+                                <label class="level-checkbox" onclick="toggleLevel(this, 'alias', 3)"><input type="checkbox"> Altres termes relacionats</label>
+                            </div>
+                        </div>
+                        <div class="expansion-section">
+                            <div class="expansion-title"><span class="icon">🔼</span> Conceptes més amplis</div>
+                            <div class="expansion-hint">Inclou categories superiors per ampliar la cerca</div>
+                            <div class="level-checkboxes">
+                                <label class="level-checkbox parent-level" onclick="toggleLevel(this, 'parent', 1)"><input type="checkbox"> Directes</label>
+                                <label class="level-checkbox parent-level" onclick="toggleLevel(this, 'parent', 2)"><input type="checkbox"> Relacionats</label>
+                                <label class="level-checkbox parent-level" onclick="toggleLevel(this, 'parent', 3)"><input type="checkbox"> Generals</label>
+                            </div>
+                        </div>
                     </div>
-                    <div class="option-group">
-                        <label>Factor de cerca (k_factor):</label>
-                        <select id="k-factor">
-                            <option value="1">1</option>
-                            <option value="3">3</option>
-                            <option value="5" selected>5</option>
-                            <option value="10">10</option>
-                        </select>
-                    </div>
-                    <div class="filters-toggle">
-                        <button onclick="toggleFilters()" style="background: darkslateblue;">⚙️ Filtres</button>
-                    </div>
-                </div>
-
-                <div id="filters" class="filters-content">
-                    <h3 style="margin-bottom: 15px;">Filtres de Metadades</h3>
-                    <div class="filters-grid">
-                        <div class="filter-group">
-                            <label>Framework:</label>
-                            <input type="text" id="filter-framework" placeholder="ex: H2020, HORIZON, FEDER">
+                    <div class="filters-section">
+                        <div class="filters-header" onclick="toggleFilters()">
+                            <span>⚙️ Filtres Avançats</span>
+                            <span id="filters-arrow">▼</span>
                         </div>
-                        <div class="filter-group">
-                            <label>Instrument:</label>
-                            <input type="text" id="filter-instrument" placeholder="ex: RIA, IA, CSA">
-                        </div>
-                        <div class="filter-group">
-                            <label>País:</label>
-                            <input type="text" id="filter-country" placeholder="ex: Spain, France">
-                        </div>
-                        <div class="filter-group">
-                            <label>Regió:</label>
-                            <input type="text" id="filter-region" placeholder="ex: Catalunya, Madrid">
-                        </div>
-                        <div class="filter-group">
-                            <label>Província:</label>
-                            <input type="text" id="filter-province" placeholder="ex: Barcelona, Girona">
-                        </div>
-                        <div class="filter-group">
-                            <label>Tipus d'Entitat:</label>
-                            <input type="text" id="filter-org-type" placeholder="ex: HES, EMPRESA, REC">
-                        </div>
-                        <div class="filter-group">
-                            <label>Any des de:</label>
-                            <input type="number" id="filter-year-from" placeholder="2015" min="2000" max="2030">
-                        </div>
-                        <div class="filter-group">
-                            <label>Any fins a:</label>
-                            <input type="number" id="filter-year-to" placeholder="2024" min="2000" max="2030">
+                        <div id="filters-content" class="filters-content">
+                            <div class="filters-grid">
+                                <div class="filter-group"><label>Framework:</label><input type="text" id="filter-framework" placeholder="H2020, AEI..."></div>
+                                <div class="filter-group"><label>Instrument:</label><input type="text" id="filter-instrument" placeholder="RIA, IA..."></div>
+                                <div class="filter-group"><label>Any des de:</label><input type="number" id="filter-year-from" placeholder="2015" min="2000" max="2030"></div>
+                                <div class="filter-group"><label>Any fins a:</label><input type="number" id="filter-year-to" placeholder="2024" min="2000" max="2030"></div>
+                                <div class="filter-group"><label>País:</label><input type="text" id="filter-country" placeholder="Spain..."></div>
+                                <div class="filter-group"><label>Regió:</label><input type="text" id="filter-region" placeholder="Catalunya..."></div>
+                                <div class="filter-group"><label>Província:</label><input type="text" id="filter-province" placeholder="Barcelona..."></div>
+                                <div class="filter-group"><label>Tipus Entitat:</label><input type="text" id="filter-org-type" placeholder="HES, EMPRESA..."></div>
+                            </div>
+                            <button class="clear-filters-btn" onclick="clearFilters()">🗑️ Netejar Filtres</button>
                         </div>
                     </div>
                 </div>
-
-                <div id="feedback-section" style="display: none;"></div>
-
+                <div id="feedback-section" class="feedback-section"></div>
                 <div id="results" class="results"></div>
-
                 <div id="debug-section" class="debug-section" style="display: none;">
                     <div class="debug-header" onclick="toggleDebug()">
-                        <span class="debug-icon">▶</span>
-                        <span>🔍 API Request & Response (Debug)</span>
+                        <span id="debug-icon" class="debug-icon">▶</span>
+                        <span>🔧 Debug: API Request & Response</span>
                     </div>
                     <div id="debug-content" class="debug-content"></div>
                 </div>
             </div>
 
-            <div id="entities-tab" class="tab-content">
-                <div class="coming-soon-message">
-                    <h3>🚧 Extracció d'Entitats (NER)</h3>
-                    <p>Aquesta funcionalitat serà implementada en WP2</p>
-                    <p style="margin-top: 10px;">
-                        Permetrà extreure automàticament entitats (organitzacions, llocs, persones) 
-                        dels projectes utilitzant el model DEBERTA_CIEL d'AINA.
-                    </p>
-                </div>
-            </div>
-
-            <div id="expansion-tab" class="tab-content">
-                <div class="coming-soon-message">
-                    <h3>🚧 Expansió Semàntica de Queries</h3>
-                    <p>Aquesta funcionalitat serà implementada en WP2</p>
-                    <p style="margin-top: 10px;">
-                        Expandirà les cerques amb sinònims i conceptes relacionats utilitzant 
-                        WordNet i altres recursos lingüístics catalans.
-                    </p>
-                </div>
-            </div>
-
+            <!-- Graph Tab -->
             <div id="graph-tab" class="tab-content">
-                <div class="coming-soon-message">
-                    <h3>🚧 Graf de Coneixement</h3>
-                    <p>Aquesta funcionalitat serà implementada en WP3</p>
-                    <p style="margin-top: 10px;">
-                        Visualització interactiva de les relacions entre projectes, 
-                        organitzacions i temàtiques.
-                    </p>
+                <div class="graph-container">
+                    <div class="graph-sidebar">
+                        <div class="graph-search-box">
+                            <input type="text" id="graph-search-input" placeholder="Cerca conceptes...">
+                            <button onclick="searchKBConcepts()">Cercar</button>
+                        </div>
+                        <div class="graph-search-results" id="graph-search-results">
+                            <div style="padding: 20px; color: #888; text-align: center;">Cerca un concepte per explorar el graf</div>
+                        </div>
+                    </div>
+                    <div class="graph-canvas-container">
+                        <svg id="graph-canvas"></svg>
+                        <div class="graph-info-bar" id="graph-info-bar" style="display: none;">
+                            Nodes: <span id="graph-node-count">0</span> · Clic per opcions · Doble-clic per expandir
+                        </div>
+                        <div class="graph-details-panel" id="graph-details-panel"></div>
+                        <div class="graph-legend">
+                            <div class="graph-legend-item"><span class="graph-legend-dot selected"></span> Seleccionat</div>
+                            <div class="graph-legend-item"><span class="graph-legend-dot parent"></span> Concepte pare</div>
+                            <div class="graph-legend-item"><span class="graph-legend-dot child"></span> Concepte fill</div>
+                            <div class="graph-legend-item"><span class="graph-legend-dot external"></span> Fora del KB</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="graph-context-menu" id="graph-context-menu">
+                    <div class="graph-context-menu-item" onclick="contextMenuAction('search')"><span class="icon">🔍</span> Cercar projectes</div>
+                    <div class="graph-context-menu-item" id="context-menu-expand" onclick="contextMenuAction('expand')"><span class="icon">🔼</span> Expandir</div>
+                    <div class="graph-context-menu-item" onclick="contextMenuAction('center')"><span class="icon">🎯</span> Centrar</div>
+                    <div class="graph-context-menu-item" onclick="contextMenuAction('hide')"><span class="icon">❌</span> Amagar</div>
                 </div>
             </div>
-            
+
+            <!-- Stats Tab -->
             <div id="stats-tab" class="tab-content">
-                <div id="stats-results">
-                    <div class="info">Fes clic al botó "Informació del Sistema" per carregar les dades del sistema.</div>
-                </div>
+                <div id="stats-results"><div class="info-message">Carregant informació del sistema...</div></div>
             </div>
-            
         </div>
     </div>
 
-    <script>
-        const API_URL = 'http://65.21.33.94:8000';
-        
-        async function checkHealth() {
-            try {
-                const response = await fetch(`${API_URL}/health`);
-                const data = await response.json();
-                const badge = document.getElementById('status-badge');
-                
-                if (data.status === 'ok') {
-                    badge.className = 'status-badge online';
-                    let statusText = 'Online';
-                    if (data.index_size > 0) {
-                        statusText += `, ${data.index_size} docs`;
-                    }
-                    if (data.parser_loaded) {
-                        statusText += ', 🤖 Parser';
-                    }
-                    badge.textContent = statusText;
-                } else {
-                    badge.className = 'status-badge offline';
-                    badge.textContent = 'Offline';
-                }
-            } catch (error) {
-                const badge = document.getElementById('status-badge');
-                badge.className = 'status-badge offline';
-                badge.textContent = 'Offline';
-            }
-        }
-        
-        checkHealth();
-        setInterval(checkHealth, 30000);
-        
-        function switchTab(tabName) {
-            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            
-            event.target.classList.add('active');
-            document.getElementById(`${tabName}-tab`).classList.add('active');
-            
-            // Auto-load stats when switching to stats tab
-            if (tabName === 'stats') {
-                loadStats();
-            }
-        }
-        
-        function toggleFilters() {
-            const filters = document.getElementById('filters');
-            filters.classList.toggle('show');
-        }
-        
-        function toggleDebug() {
-            const content = document.getElementById('debug-content');
-            const icon = document.querySelector('.debug-icon');
-            
-            if (content.classList.contains('show')) {
-                content.classList.remove('show');
-                icon.textContent = '▶';
-            } else {
-                content.classList.add('show');
-                icon.textContent = '▼';
-            }
-        }
-        
-        function displayDebugInfo(request, response) {
-            const debugSection = document.getElementById('debug-section');
-            const debugContent = document.getElementById('debug-content');
-            
-            let html = '';
-            html += '<div class="debug-box">';
-            html += '<h4>📤 API Request</h4>';
-            html += '<pre>' + JSON.stringify(request, null, 2) + '</pre>';
-            html += '</div>';
-            
-            html += '<div class="debug-box">';
-            html += '<h4>📥 API Response</h4>';
-            html += '<pre>' + JSON.stringify(response, null, 2) + '</pre>';
-            html += '</div>';
-            
-            debugContent.innerHTML = html;
-            debugSection.style.display = 'block';
-        }
-        
-        function applyParsedFilters(filters) {
-            // Clear all filters first
-            document.getElementById('filter-framework').value = '';
-            document.getElementById('filter-instrument').value = '';
-            document.getElementById('filter-country').value = '';
-            document.getElementById('filter-region').value = '';
-            document.getElementById('filter-province').value = '';
-            document.getElementById('filter-org-type').value = '';
-            document.getElementById('filter-year-from').value = '';
-            document.getElementById('filter-year-to').value = '';
-            
-            if (!filters) return;
-            
-            // Apply new filters
-            if (filters.framework && filters.framework.length > 0) {
-                document.getElementById('filter-framework').value = filters.framework.join(', ');
-            }
-            if (filters.instrument) {
-                document.getElementById('filter-instrument').value = filters.instrument;
-            }
-            if (filters.country && filters.country.length > 0) {
-                document.getElementById('filter-country').value = filters.country.join(', ');
-            }
-            if (filters.region && filters.region.length > 0) {
-                document.getElementById('filter-region').value = filters.region.join(', ');
-            }
-            if (filters.province && filters.province.length > 0) {
-                document.getElementById('filter-province').value = filters.province.join(', ');
-            }
-            if (filters.organization_type && filters.organization_type.length > 0) {
-                document.getElementById('filter-org-type').value = filters.organization_type.join(', ');
-            }
-            if (filters.year_from) {
-                document.getElementById('filter-year-from').value = filters.year_from;
-            }
-            if (filters.year_to) {
-                document.getElementById('filter-year-to').value = filters.year_to;
-            }
-            
-            // Show filters section if any applied
-            if (filters.framework || filters.instrument || filters.country || filters.region || filters.province || 
-                filters.organization_type || filters.year_from || filters.year_to) {
-                document.getElementById('filters').style.display = 'block';
-            }
-        }
-        
-        function displayFeedback(feedback, filters) {
-            const feedbackSection = document.getElementById('feedback-section');
-            
-            if (!feedback && !filters) {
-                feedbackSection.style.display = 'none';
-                return;
-            }
-            
-            let html = '<div class="feedback-section">';
-            html += '<h4>🤖 Resultats del Parsing Intel·ligent</h4>';
-            
-            if (feedback?.query_rewrite) {
-                html += '<div class="feedback-item">';
-                html += '<span class="feedback-label">Query reescrita:</span> ';
-                html += `<span class="feedback-value">"${feedback.query_rewrite}"</span>`;
-                html += '</div>';
-            }
-            
-            if (feedback?.warning) {
-                html += '<div class="feedback-item">';
-                html += `<span class="feedback-value" style="color: #ff6b6b;">⚠️ ${feedback.warning}</span>`;
-                html += '</div>';
-            }
-
-            if (feedback?.info) {
-                html += '<div class="feedback-item">';
-                html += `<span class="feedback-value" style="color: #4dabf7;">ℹ️ ${feedback.info}</span>`;
-                html += '</div>';
-            }
-            
-            if (feedback?.notes) {
-                html += '<div class="feedback-item">';
-                html += '<span class="feedback-label">Notes:</span> ';
-                html += `<span class="feedback-value">${feedback.notes}</span>`;
-                html += '</div>';
-            }
-            
-            var active_filters = (
-              filters.framework ||
-              filters.instrument ||
-              filters.year_from ||
-              filters.year_to ||
-              filters.country ||
-              filters.region ||
-              filters.province ||
-              filters.organization_type
-            )
-            
-            if (active_filters) {
-                html += '<div class="feedback-item">';
-                html += '<span class="feedback-label">Filtres actius:</span>';
-                html += '<div class="detected-filters">';
-                
-                if (filters.framework) {
-                    filters.framework.forEach(f => {
-                        html += `<span class="filter-tag">Framework: ${f}</span>`;
-                    });
-                }
-                if (filters.instrument) {
-                    html += `<span class="filter-tag">Instrument: ${filters.instrument}</span>`;
-                }
-                if (filters.year_from || filters.year_to) {
-                    const yearRange = filters.year_from && filters.year_to && filters.year_from === filters.year_to
-                        ? `Any: ${filters.year_from}`
-                        : `Any: ${filters.year_from || '...'} - ${filters.year_to || '...'}`;
-                    html += `<span class="filter-tag">${yearRange}</span>`;
-                }
-                if (filters.country) {
-                    filters.country.forEach(c => {
-                        html += `<span class="filter-tag">País: ${c}</span>`;
-                    });
-                }
-                if (filters.region) {
-                    filters.region.forEach(r => {
-                        html += `<span class="filter-tag">Regió: ${r}</span>`;
-                    });
-                }
-                if (filters.province) {
-                    filters.province.forEach(p => {
-                        html += `<span class="filter-tag">Província: ${p}</span>`;
-                    });
-                }
-                if (filters.organization_type) {
-                    filters.organization_type.forEach(t => {
-                        html += `<span class="filter-tag">Tipus: ${t}</span>`;
-                    });
-                }
-                
-                html += '</div></div>';
-            }
-            
-            if (feedback?.error) {
-                html += '<div class="feedback-item">';
-                html += `<span class="feedback-value" style="color: #d32f2f;">⚠️ ${feedback.error}</span>`;
-                html += '</div>';
-            }
-            
-            html += '</div>';
-            
-            feedbackSection.innerHTML = html;
-            feedbackSection.style.display = 'block';
-        }
-        
-        async function performSearch() {
-            const query = document.getElementById('search-input').value;
-            const k = parseInt(document.getElementById('top-k').value);
-            const kFactor = parseInt(document.getElementById('k-factor').value);
-            const useParsing = document.getElementById('use-parsing').checked;
-            
-            const resultsDiv = document.getElementById('results');
-            resultsDiv.innerHTML = '<div class="loading">Cercant...</div>';
-            
-            // Always read filters from UI, regardless of parsing mode
-            let filters = null;
-            const framework = document.getElementById('filter-framework').value.trim();
-            const instrument = document.getElementById('filter-instrument').value.trim();
-            const country = document.getElementById('filter-country').value.trim();
-            const region = document.getElementById('filter-region').value.trim();
-            const province = document.getElementById('filter-province').value.trim();
-            const orgType = document.getElementById('filter-org-type').value.trim();
-            const yearFrom = document.getElementById('filter-year-from').value;
-            const yearTo = document.getElementById('filter-year-to').value;
-            
-            if (framework || instrument || country || region || province || orgType || yearFrom || yearTo) {
-                filters = {};
-                if (framework) filters.framework = framework.split(',').map(s => s.trim());
-                if (instrument) filters.instrument = instrument;
-                if (country) filters.country = country.split(',').map(s => s.trim());
-                if (region) filters.region = region.split(',').map(s => s.trim());
-                if (province) filters.province = province.split(',').map(s => s.trim());
-                if (orgType) filters.organization_type = orgType.split(',').map(s => s.trim());
-                if (yearFrom) filters.year_from = parseInt(yearFrom);
-                if (yearTo) filters.year_to = parseInt(yearTo);
-            }
-                       
-            try {
-                const requestBody = {
-                    query: query,
-                    k: k,
-                    k_factor: kFactor,
-                    filters: filters,
-                    use_parsing: useParsing
-                };
-                
-                const response = await fetch(`${API_URL}/search`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(requestBody)
-                });
-                
-                if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.detail || 'Search failed');
-                }
-                
-                const data = await response.json();
-                
-                displayDebugInfo(requestBody, data);
-                
-                if (useParsing && data.feedback) {
-                    displayFeedback(data.feedback, data.filters);
-                    if (data.filters) {
-                        applyParsedFilters(data.filters);
-                    }
-                } else {
-                    document.getElementById('feedback-section').style.display = 'none';
-                }
-                
-                displaySearchResults(data);
-            } catch (error) {
-                resultsDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
-                document.getElementById('feedback-section').style.display = 'none';
-            }
-        }
-        
-        function displaySearchResults(data) {
-            const resultsDiv = document.getElementById('results');
-            
-            if (data.error) {
-                resultsDiv.innerHTML = `<div class="error">Error: ${data.error}</div>`;
-                return;
-            }
-            
-            let html = `
-                <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 10px;">
-                    <strong>Query original:</strong> "${data.query}"<br>
-                    ${data.query_used !== data.query ? `<strong>Query utilitzada:</strong> "${data.query_used}"<br>` : ''}
-                    <strong>Documents trobats:</strong> ${data.returned} de ${data.k} sol·licitats
-                    ${data.filters ? `<br><strong>Filtres aplicats:</strong> Sí` : ''}
-                </div>
-            `;
-            
-            if (!data.results || data.results.length === 0) {
-                html += '<div class="info">No s\'han trobat resultats. Prova amb altres termes o ajusta els filtres.</div>';
-            } else {
-                if (data.total_matching !== undefined) {
-                    if (data.total_matching > data.returned) {
-                        html = `<h2>Resultats (${data.returned} de ${data.total_matching} projectes)</h2>`;
-                    } else {
-                        html = `<h2>Resultats (${data.total_matching} projectes)</h2>`;
-                    }
-                } else {
-                    html = `<h2>Resultats (${data.returned})</h2>`;
-                }
-                data.results.forEach((result, idx) => {
-                    const meta = result.metadata || {};
-                    const title = result.title || meta.title || `Document ${result.id}`;
-                    const abstract = result.abstract || meta.abstract || result.text || 'Sense descripció disponible';
-                    const displayAbstract = abstract.length > 500 ? abstract.substring(0, 500) + '...' : abstract;
-                    
-                    // Format financial data
-                    const formatCurrency = (val) => {
-                        if (!val || isNaN(val)) return null;
-                        return new Intl.NumberFormat('ca-ES', {
-                            style: 'currency',
-                            currency: 'EUR',
-                            maximumFractionDigits: 0
-                        }).format(val);
-                    };
-                    
-                    html += `
-                        <div class="result-item">
-                            <div class="result-header">
-                                <div>
-                                    <div class="result-title">${title}</div>
-                                    <span style="color: #999; font-size: 12px;">ID: ${result.id}</span>
-                                </div>
-                                <div class="result-score">#${idx + 1} | Score: ${result.score.toFixed(4)}</div>
-                            </div>
-                            <div class="result-abstract">${displayAbstract}</div>
-                            <div class="result-meta">
-                                ${meta.framework_name ? `
-                                    <div class="meta-item">
-                                        <span class="meta-label">Framework:</span> ${meta.framework_name}
-                                    </div>
-                                ` : ''}
-                                ${meta.instrument_name ? `
-                                    <div class="meta-item">
-                                        <span class="meta-label">Instrument:</span> ${meta.instrument_name}
-                                    </div>
-                                ` : ''}
-                                ${meta.year ? `
-                                    <div class="meta-item">
-                                        <span class="meta-label">Any:</span> ${parseInt(meta.year)}
-                                    </div>
-                                ` : ''}
-                                ${formatCurrency(meta.total_investment) ? `
-                                    <div class="meta-item">
-                                        <span class="meta-label">Inversió Total:</span> ${formatCurrency(meta.total_investment)}
-                                    </div>
-                                ` : ''}
-                                ${formatCurrency(meta.total_grant) ? `
-                                    <div class="meta-item">
-                                        <span class="meta-label">Subvenció:</span> ${formatCurrency(meta.total_grant)}
-                                    </div>
-                                ` : ''}
-                            </div>
-                        </div>
-                    `;
-                });
-            }
-            
-            resultsDiv.innerHTML = html;
-        }
-        
-        async function loadStats() {
-            const statsDiv = document.getElementById('stats-results');
-            statsDiv.innerHTML = '<div class="loading">Carregant informació del sistema...</div>';
-            
-            try {
-                const response = await fetch(`${API_URL}/health`);
-                const data = await response.json();
-                displayStats(data);
-            } catch (error) {
-                statsDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
-            }
-        }
-
-        function displayStats(data) {
-            const statsDiv = document.getElementById('stats-results');
-            
-            let html = `
-                <h2 style="margin-bottom: 20px;">Informació del Sistema</h2>
-                <div class="stats">
-                    <div class="stat-card">
-                        <div class="stat-value">${data.index_size || 0}</div>
-                        <div class="stat-label">Documents Indexats</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value">${data.projects_metadata_loaded || 0}</div>
-                        <div class="stat-label">Projectes amb Metadades</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value">${data.parser_loaded ? '✅' : '❌'}</div>
-                        <div class="stat-label">Parser Intel·ligent</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value">${data.status === 'ok' ? '✅' : '❌'}</div>
-                        <div class="stat-label">Estat del Sistema</div>
-                    </div>
-                </div>
-                <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 10px;">
-                    <h3>Informació del Model</h3>
-                    <ul style="margin-top: 10px; list-style-position: inside;">
-                        <li>Model d'Embeddings: mRoBERTA (BSC)</li>
-                        <li>Backend Vectorial: HNSW (Hierarchical Navigable Small World)</li>
-                        <li>Parser: Salamandra-7B fine-tuned</li>
-                        <li>API Version: 0.3.0</li>
-                    </ul>
-                </div>
-                <div style="margin-top: 20px; padding: 20px; background: #fff3cd; border-radius: 10px;">
-                    <h3>Funcionalitats en Desenvolupament (WP2-WP3)</h3>
-                    <ul style="margin-top: 10px; list-style-position: inside;">
-                        <li>✨ Extracció d'entitats amb DEBERTA_CIEL</li>
-                        <li>✨ Expansió semàntica de queries amb WordNet</li>
-                        <li>✨ Graf de coneixement navegable</li>
-                        <li>✨ Traducció automàtica amb SalamandraTA</li>
-                        <li>✨ RAG amb Salamandra-7B</li>
-                    </ul>
-                </div>
-            `;
-            
-            statsDiv.innerHTML = html;
-        }
-        
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && e.target.id === 'search-input') {
-                performSearch();
-            }
-        });
-        
-        const sampleQueries = [
-            'projectes d\'intel·ligència artificial en salut',
-            'projectes d\'energia renovable finançats per H2020',
-            'recerca en blockchain a Catalunya',
-            'projectes d\'economia circular el 2020',
-            'smart cities amb Internet de les Coses'
-        ];
-        
-        document.getElementById('search-input').addEventListener('focus', function() {
-            if (!this.value) {
-                const randomQuery = sampleQueries[Math.floor(Math.random() * sampleQueries.length)];
-                this.placeholder = `Prova amb: "${randomQuery}"`;
-            }
-        });
-    </script>
+    <!-- External JavaScript files -->
+    <script src="js/impuls_config.js"></script>
+    <script src="js/impuls_search.js"></script>
+    <script src="js/impuls_graph.js"></script>
+    <script src="js/impuls_init.js"></script>
 </body>
 </html>
