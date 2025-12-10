@@ -5,11 +5,10 @@ import numpy as np
 import traceback
 
 from typing import List, Optional
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request, Security, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import JSONResponse
+from fastapi.security import APIKeyHeader
 from pydantic import BaseModel, Field
 from typing import List, Dict, Any, Optional
 from pathlib import Path
@@ -46,7 +45,61 @@ logger = logging.getLogger(__name__)
 # API Key from environment
 API_KEY = os.getenv("IMPULSE_API_KEY", "")
 
-app = FastAPI(title="IMPULS-AINA API", version="1")
+# ============================================================
+# Security scheme for Swagger UI
+# ============================================================
+api_key_header = APIKeyHeader(
+    name="X-API-Key",
+    auto_error=False,  # Don't auto-error, we handle it in middleware
+    description="API key for authentication. Get it from your administrator."
+)
+
+app = FastAPI(
+    title="IMPULS-AINA API",
+    version="1.0",
+    description="Multilingual semantic search API for R&D projects",
+    # Add OpenAPI security scheme
+    openapi_tags=[
+        {"name": "search", "description": "Search operations"},
+        {"name": "parsing", "description": "Query parsing operations"},
+        {"name": "knowledge-base", "description": "Knowledge base operations"},
+        {"name": "system", "description": "System health and status"},
+    ]
+)
+
+# ============================================================
+# Custom OpenAPI schema to include security
+# ============================================================
+def custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+    
+    from fastapi.openapi.utils import get_openapi
+    
+    openapi_schema = get_openapi(
+        title=app.title,
+        version=app.version,
+        description=app.description,
+        routes=app.routes,
+    )
+    
+    # Add security scheme
+    openapi_schema["components"]["securitySchemes"] = {
+        "APIKeyHeader": {
+            "type": "apiKey",
+            "in": "header",
+            "name": "X-API-Key",
+            "description": "API key for authentication"
+        }
+    }
+    
+    # Apply security globally to all endpoints
+    openapi_schema["security"] = [{"APIKeyHeader": []}]
+    
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+app.openapi = custom_openapi
 
 # Add CORS middleware
 app.add_middleware(
@@ -79,10 +132,6 @@ async def verify_api_key(request: Request, call_next):
     
     # Check API key
     provided_key = request.headers.get("X-API-Key")
-    
-    # TEMPORARY DEBUG - remove after testing
-    logger.info(f"API_KEY configured: '{API_KEY[:4]}...'")
-    logger.info(f"Provided key: '{provided_key[:4] if provided_key else None}...'")
     
     if provided_key != API_KEY:
         return JSONResponse(
