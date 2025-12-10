@@ -30,8 +30,6 @@ IMPULS is a multilingual semantic search system for R&D projects, enabling natur
 ┌─────────────────────────────▼───────────────────────────────┐
 │                      API Gateway                            │
 │                  (FastAPI - Port 8000)                      │
-│                                                             │
-│   /health    /search    /parse    /kb/search                │
 └──────┬──────────┬──────────┬───────────┬────────────────────┘
        │          │          │           │
 ┌──────▼────┐ ┌───▼────┐ ┌───▼─────┐ ┌───▼────┐
