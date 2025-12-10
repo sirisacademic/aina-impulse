@@ -294,4 +294,4 @@ See [TRAINING.md](TRAINING.md) for complete instructions on:
 
 ---
 
-*IMPULS - AINA Challenge 2024*
+*IMPULS - AINA Challenge*

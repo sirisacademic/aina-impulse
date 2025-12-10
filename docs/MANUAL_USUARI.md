@@ -262,5 +262,5 @@ Si trobes errors o tens suggeriments:
 
 ---
 
-*IMPULS - Projecte AINA Challenge 2024*
-*Desenvolupat per SIRIS Academic per a la Generalitat de Catalunya*
+*IMPULS - Projecte AINA Challenge*
+*Desenvolupat per SIRIS Academic*

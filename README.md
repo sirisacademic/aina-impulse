@@ -1,6 +1,6 @@
 # IMPULS - Multilingual Semantic Search for R&D Projects
 
-[![AINA Challenge 2024](https://img.shields.io/badge/AINA%20Challenge-2024-blue)](https://projecteaina.cat/)
+[![AINA Challenge](https://img.shields.io/badge/AINA%20Challenge-2024-blue)](https://projecteaina.cat/)
 [![HuggingFace Collection](https://img.shields.io/badge/🤗%20HuggingFace-Collection-yellow)](https://huggingface.co/collections/SIRIS-Lab/aina-impuls)
 [![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](LICENSE)
 
@@ -237,7 +237,7 @@ aina-impulse/
 - **[SIRIS Academic](https://sirisacademic.com/)** - Project development
 - **[Barcelona Supercomputing Center (BSC)](https://www.bsc.es/)** - AINA models and infrastructure
 - **[Generalitat de Catalunya](https://web.gencat.cat/)** - RIS3-MCAT platform and funding
-- **[AINA Project](https://projecteaina.cat/)** - AINA Challenge 2024 framework
+- **[AINA Project](https://projecteaina.cat/)** - AINA Challenge framework
 
 ## 📄 License
 
@@ -250,4 +250,4 @@ Apache 2.0 License - see [LICENSE](LICENSE) for details.
 
 ---
 
-*IMPULS is part of the AINA Challenge 2024, advancing Catalan language technology for research and innovation.*
+*IMPULS is part of the AINA Challenge, advancing Catalan language technology for research and innovation.*

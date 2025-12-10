@@ -2,8 +2,8 @@
 
 ## Sistema de Cerca Semàntica Multilingüe per a Projectes d'R+D
 
-**Projecte AINA Challenge 2024**  
-**Desenvolupat per SIRIS Academic per a la Generalitat de Catalunya**
+**Projecte AINA Challenge**  
+**Desenvolupat per SIRIS Academic**
 
 ---
 
@@ -175,5 +175,5 @@ Tot el codi i els models es publiquen sota llicència **Apache 2.0**.
 
 ---
 
-*IMPULS - Projecte AINA Challenge 2024*  
-*Desembre 2024*
+*IMPULS - Projecte AINA Challenge*  
+*Desembre 2025*
